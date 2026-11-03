@@ -60,6 +60,7 @@ id: Property_ID (PR-…) · status: Status ['Available', 'Under Negotiation', 'B
 | Phone | text |
 | Email | text |
 | Specialty | text |
+| Area | text |
 | Experience_Years | numeric |
 | Status | text |
 | Joined_On | text |

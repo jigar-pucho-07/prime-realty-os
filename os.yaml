@@ -158,16 +158,18 @@ entities:
     subtitle: [Specialty]
     contact: { phone: Phone, whatsapp: Phone }
     status: { column: Status, values: [Active, Inactive] }
-    columns: [Broker_ID, Name, Phone, Email, Specialty, Experience_Years, Status, Joined_On]
+    columns: [Broker_ID, Name, Phone, Email, Specialty, Area, Experience_Years, Status, Joined_On]
+    # Area: the locality a broker mainly covers (Brokers page filter, 3 Nov 2026). ⚑ The demo areas are assumptions taken from
+    # the inventory's areas until Prime Realty gives each broker's real area.
     fields:
       Name:             { unique: true }
       Specialty:        { one_of: [Residential, Commercial, Plots] }
       Experience_Years: { type: number, min: 0, max: 60, integer: true }
     seed: 0
     examples:
-      - { Broker_ID: BR-001, Name: Rajesh Kumar, Phone: "+919800111001", Email: rajesh@primerealty.example, Specialty: Residential, Experience_Years: 8, Status: Active, Joined_On: "2018-04-01" }
-      - { Broker_ID: BR-002, Name: Sunil Sharma, Phone: "+919800122002", Email: sunil@primerealty.example, Specialty: Commercial, Experience_Years: 6, Status: Active, Joined_On: "2020-06-15" }
-      - { Broker_ID: BR-003, Name: Meena Verma, Phone: "+919800133003", Email: meena@primerealty.example, Specialty: Plots, Experience_Years: 5, Status: Active, Joined_On: "2021-01-10" }
+      - { Broker_ID: BR-001, Name: Rajesh Kumar, Phone: "+919800111001", Email: rajesh@primerealty.example, Specialty: Residential, Area: Kolar Road, Experience_Years: 8, Status: Active, Joined_On: "2018-04-01" }
+      - { Broker_ID: BR-002, Name: Sunil Sharma, Phone: "+919800122002", Email: sunil@primerealty.example, Specialty: Commercial, Area: DB Mall Road, Experience_Years: 6, Status: Active, Joined_On: "2020-06-15" }
+      - { Broker_ID: BR-003, Name: Meena Verma, Phone: "+919800133003", Email: meena@primerealty.example, Specialty: Plots, Area: Misrod, Experience_Years: 5, Status: Active, Joined_On: "2021-01-10" }
 
   - name: bookings
     id: { column: Booking_ID, prefix: "BK-" }
@@ -555,16 +557,17 @@ pages:
           - { id: broker-revenue, type: breakdown, entity: bookings, title: Booked value by broker, group: Broker, sum: Deal_Value_INR, where: "Status=Booked", style: bar }
       - type: table
         views: [cards, table]
-        columns: [ { key: Name, type: text, sub: Phone }, { key: Specialty, type: tag }, { key: Experience_Years, header: Years, type: number }, { key: Status, type: badge }, { key: Broker_ID, type: id, priority: low } ]
-        card: { title: Name, subtitle: [Specialty], badge: Status, fields: [ { key: Phone, label: Phone, icon: Phone }, { key: Experience_Years, label: Years, icon: Award } ], actions: [edit_broker] }
-        drawer: { title_column: Name, sections: [ { type: fields, columns: [Phone, Email, Specialty, Experience_Years, Joined_On] }, { type: related, entity: bookings, by: Broker, title: Assignment log, columns: [Client_Name, Property_Name, Visit_At, Status, Commission_INR] } ] }
-        search: [Name, Phone]
+        columns: [ { key: Name, type: text, sub: Phone }, { key: Specialty, type: tag }, { key: Area, type: tag }, { key: Experience_Years, header: Years, type: number }, { key: Status, type: badge }, { key: Broker_ID, type: id, priority: low } ]
+        card: { title: Name, subtitle: [Specialty], badge: Status, fields: [ { key: Phone, label: Phone, icon: Phone }, { key: Area, label: Area, icon: MapPin }, { key: Experience_Years, label: Years, icon: Award } ], actions: [edit_broker] }
+        drawer: { title_column: Name, sections: [ { type: fields, columns: [Phone, Email, Specialty, Area, Experience_Years, Joined_On] }, { type: related, entity: bookings, by: Broker, title: Assignment log, columns: [Client_Name, Property_Name, Visit_At, Status, Commission_INR] } ] }
+        search: [Name, Phone, Area]
+        filters: [Area, Specialty, Status]
         actions: { header: [add_broker], row: [edit_broker] }
     modals:
       - { id: add_broker, kind: create, title: Add broker, direct: insert, submit: Add broker, success: "Broker added — create their sign-in in Users & roles", context: { Status: Active },
-          fields: [ { key: Name, label: Name, type: text, required: true, help: "Must match the person's name in Users & roles so they see their own visits" }, { key: Phone, label: Mobile, type: text, required: true }, { key: Email, label: Email, type: text }, { key: Specialty, label: Specialty, type: select, options: [Residential, Commercial, Plots], required: true }, { key: Experience_Years, label: Years of experience, type: number } ] }
+          fields: [ { key: Name, label: Name, type: text, required: true, help: "Must match the person's name in Users & roles so they see their own visits" }, { key: Phone, label: Mobile, type: text, required: true }, { key: Email, label: Email, type: text }, { key: Specialty, label: Specialty, type: select, options: [Residential, Commercial, Plots], required: true }, { key: Area, label: Area, type: select, options_from: properties.Area_Name }, { key: Experience_Years, label: Years of experience, type: number } ] }
       - { id: edit_broker, kind: edit, title: Edit broker, direct: patch, summary: [Name, Specialty], submit: Save,
-          fields: [ { key: Phone, label: Mobile, type: text }, { key: Specialty, label: Specialty, type: select, options: [Residential, Commercial, Plots] }, { key: Status, label: Status, type: select, options: [Active, Inactive] } ] }
+          fields: [ { key: Phone, label: Mobile, type: text }, { key: Specialty, label: Specialty, type: select, options: [Residential, Commercial, Plots] }, { key: Area, label: Area, type: select, options_from: properties.Area_Name }, { key: Status, label: Status, type: select, options: [Active, Inactive] } ] }
 
   - id: ai_agents
     covers: [R17]

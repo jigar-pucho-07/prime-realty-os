@@ -106,6 +106,7 @@
         "Phone",
         "Email",
         "Specialty",
+        "Area",
         "Experience_Years",
         "Status",
         "Joined_On"
@@ -116,6 +117,7 @@
         "Phone": "text",
         "Email": "text",
         "Specialty": "text",
+        "Area": "text",
         "Experience_Years": "numeric",
         "Status": "text",
         "Joined_On": "text"

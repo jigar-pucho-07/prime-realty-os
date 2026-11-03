@@ -88,8 +88,8 @@ Data: **PostgreSQL** (one database per client, single-tenant) · security: **§1
 | Inventory | Change status | status: 1 field · direct |
 | Follow-ups | Reschedule nudge | edit: 1 field · direct |
 | Follow-ups | Stop follow-ups | status: 0 fields · direct |
-| Brokers | Add broker | create: 5 fields · direct |
-| Brokers | Edit broker | edit: 3 fields · direct |
+| Brokers | Add broker | create: 6 fields · direct |
+| Brokers | Edit broker | edit: 4 fields · direct |
 | Agent settings | Change setting | edit: 1 field · direct |
 | My site visits | Visit outcome | status: 4 fields · direct |
 

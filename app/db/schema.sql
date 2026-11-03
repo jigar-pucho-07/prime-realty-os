@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS "brokers" (
   "phone" text,
   "email" text,
   "specialty" text,
+  "area" text,
   "experience_years" numeric,
   "status" text,
   "joined_on" text,
@@ -389,6 +390,7 @@ ALTER TABLE "brokers" ADD COLUMN IF NOT EXISTS "name" text;
 ALTER TABLE "brokers" ADD COLUMN IF NOT EXISTS "phone" text;
 ALTER TABLE "brokers" ADD COLUMN IF NOT EXISTS "email" text;
 ALTER TABLE "brokers" ADD COLUMN IF NOT EXISTS "specialty" text;
+ALTER TABLE "brokers" ADD COLUMN IF NOT EXISTS "area" text;
 ALTER TABLE "brokers" ADD COLUMN IF NOT EXISTS "experience_years" numeric;
 ALTER TABLE "brokers" ADD COLUMN IF NOT EXISTS "status" text;
 ALTER TABLE "brokers" ADD COLUMN IF NOT EXISTS "joined_on" text;

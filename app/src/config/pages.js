@@ -1655,6 +1655,10 @@ export const PAGES = [
             "type": "tag"
           },
           {
+            "key": "Area",
+            "type": "tag"
+          },
+          {
             "key": "Experience_Years",
             "header": "Years",
             "type": "number"
@@ -1682,6 +1686,11 @@ export const PAGES = [
               "icon": "Phone"
             },
             {
+              "key": "Area",
+              "label": "Area",
+              "icon": "MapPin"
+            },
+            {
               "key": "Experience_Years",
               "label": "Years",
               "icon": "Award"
@@ -1700,6 +1709,7 @@ export const PAGES = [
                 "Phone",
                 "Email",
                 "Specialty",
+                "Area",
                 "Experience_Years",
                 "Joined_On"
               ]
@@ -1721,7 +1731,13 @@ export const PAGES = [
         },
         "search": [
           "Name",
-          "Phone"
+          "Phone",
+          "Area"
+        ],
+        "filters": [
+          "Area",
+          "Specialty",
+          "Status"
         ],
         "actions": {
           "header": [
@@ -1776,6 +1792,12 @@ export const PAGES = [
             "required": true
           },
           {
+            "key": "Area",
+            "label": "Area",
+            "type": "select",
+            "options_from": "properties.Area_Name"
+          },
+          {
             "key": "Experience_Years",
             "label": "Years of experience",
             "type": "number"
@@ -1807,6 +1829,12 @@ export const PAGES = [
               "Commercial",
               "Plots"
             ]
+          },
+          {
+            "key": "Area",
+            "label": "Area",
+            "type": "select",
+            "options_from": "properties.Area_Name"
           },
           {
             "key": "Status",
