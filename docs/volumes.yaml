@@ -1,0 +1,25 @@
+# Step-1 estimate inputs for scripts/estimate_os.py --inputs.
+# Every volume is ⚑ assumed from the client's dashboard sample until Prime Realty confirms it (gap G1).
+name: Prime Realty OS
+client: Prime Realty India
+volumes:
+  leads:            { per_month: 142, quote: "Total Leads (August) 142 [html L472]" }
+  wa_messages:      { per_month: 1140, quote: "⚑ assumed 8 inbound WhatsApp messages per lead (142 × 8)" }
+  bookings:         { per_month: 38,  quote: "Bookings Confirmed 38 [html L478]" }
+  calls:            { per_month: 89,  quote: "Total Calls (Month) 89 [html L720]" }
+  followup_msgs:    { per_month: 930, quote: "Messages Sent Today 31 [html L981] × 30 days" }
+  scheduler_runs:   { per_month: 180, quote: "Follow-up Scheduler (Every 4hrs) [n8n L60] = 6 a day × 30" }
+  manual_replies:   { per_month: 200, quote: "⚑ assumed — office replies typed by hand after a take-over" }
+actions:
+  # PR - WA_AGENT: one run per inbound WhatsApp message — lookup, 1 LLM call (Hinglish reply + intent), writes, reply
+  - { workflow: WA_AGENT,     name: reply,         trigger: "Client sends a WhatsApp message", per: wa_messages, ratio: 1.0, model: standard, sends: whatsapp }
+  # booking branch of the same run: assign broker, insert booking, broker alert template
+  - { workflow: WA_AGENT,     name: book_visit,    trigger: "AI detects a visit agreed",       per: bookings,    ratio: 1.0, model: none, sends: whatsapp, credits: 4 }
+  # PR - VOICE_AGENT: VAPI calls the flow once per caller turn; ~8 turns in a 3m 42s call [html L722]. Voice minutes are billed by VAPI, not Pucho.
+  - { workflow: VOICE_AGENT,  name: answer,        trigger: "VAPI sends a caller turn",        per: calls,       ratio: 8.0, model: standard, quote: "⚑ assumed 8 turns per call" }
+  # PR - FOLLOWUP: schedule scan (no AI) + one template send per due follow-up
+  - { workflow: FOLLOWUP,     name: scan,          trigger: "schedule every 4 h",              per: scheduler_runs, ratio: 1.0, model: none }
+  - { workflow: FOLLOWUP,     name: nudge,         trigger: "a follow-up is due",              per: followup_msgs,  ratio: 1.0, model: none, sends: whatsapp, credits: 4 }
+  # PR - SEND: office replies and visit confirmations from the app
+  - { workflow: SEND,         name: reply,         trigger: "Office admin replies in Inbox",   per: manual_replies, ratio: 1.0, model: none, sends: whatsapp }
+  - { workflow: SEND,         name: visit_confirm, trigger: "Office admin confirms a booking", per: bookings,       ratio: 1.0, model: none, sends: whatsapp }

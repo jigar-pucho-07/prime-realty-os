@@ -1,0 +1,938 @@
+{
+  "name": "Real Estate AI Agent - Complete System",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["messages"],
+        "options": {}
+      },
+      "id": "wa-webhook-trigger",
+      "name": "WhatsApp Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [180, 300],
+      "webhookId": "realstate-whatsapp-webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "realstate-whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "realstate-meta-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "meta-lead-trigger",
+      "name": "Meta Ads Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [180, 500]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "realstate-voice-call",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "voice-call-trigger",
+      "name": "Voice Call Webhook (VAPI)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [180, 700]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      },
+      "id": "followup-scheduler",
+      "name": "Follow-up Scheduler (Every 4hrs)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 900]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse WhatsApp incoming message\nconst body = $input.first().json.body || $input.first().json;\n\nlet phoneNumber = '';\nlet message = '';\nlet contactName = 'Client';\nlet source = 'whatsapp';\n\n// Handle different webhook formats\nif (body.entry) {\n  // Meta WhatsApp Cloud API format\n  try {\n    const entry = body.entry[0];\n    const changes = entry.changes[0];\n    const value = changes.value;\n    \n    if (value.messages && value.messages.length > 0) {\n      const msg = value.messages[0];\n      phoneNumber = msg.from;\n      message = msg.text?.body || msg.button?.text || 'Hello';\n      contactName = value.contacts?.[0]?.profile?.name || 'Client';\n    } else {\n      // Not a message event, skip\n      return [{ json: { skip: true } }];\n    }\n  } catch(e) {\n    return [{ json: { skip: true, error: e.message } }];\n  }\n} else if (body.From) {\n  // Twilio format\n  phoneNumber = body.From.replace('whatsapp:', '');\n  message = body.Body;\n  contactName = 'Client';\n}\n\nreturn [{\n  json: {\n    phoneNumber,\n    message,\n    contactName,\n    source,\n    sessionId: `wa_${phoneNumber}`,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "parse-whatsapp",
+      "name": "Parse WhatsApp Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Meta Ads Lead Form submission\nconst body = $input.first().json.body || $input.first().json;\n\nlet leadData = {};\n\n// Meta Lead Gen Form format\nif (body.entry) {\n  const entry = body.entry[0];\n  const change = entry.changes[0];\n  const leadgenId = change.value.leadgen_id;\n  const formId = change.value.form_id;\n  const pageId = change.value.page_id;\n  \n  leadData = {\n    leadgenId,\n    formId,\n    pageId,\n    adId: change.value.ad_id,\n    source: 'meta_ads'\n  };\n} else {\n  // Direct form data\n  leadData = {\n    phoneNumber: body.phone || body.mobile || '',\n    name: body.name || body.full_name || 'Lead',\n    email: body.email || '',\n    interestedIn: body.interested_in || body.property_type || 'General Inquiry',\n    budget: body.budget || '',\n    source: 'meta_ads',\n    adName: body.ad_name || 'Meta Ad',\n    timestamp: new Date().toISOString()\n  };\n}\n\nreturn [{ json: leadData }];"
+      },
+      "id": "parse-meta-lead",
+      "name": "Parse Meta Lead Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Voice Call webhook (VAPI/Twilio/custom)\nconst body = $input.first().json.body || $input.first().json;\n\nconst callData = {\n  phoneNumber: body.from || body.callerNumber || body.caller_number || '',\n  transcript: body.transcript || body.message || body.text || '',\n  callId: body.call_id || body.callSid || `call_${Date.now()}`,\n  callStatus: body.status || 'in_progress',\n  source: 'voice_call',\n  sessionId: `voice_${body.from || Date.now()}`,\n  timestamp: new Date().toISOString()\n};\n\nreturn [{ json: callData }];"
+      },
+      "id": "parse-voice",
+      "name": "Parse Voice Call Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 700]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "skip-check",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "skip-filter",
+      "name": "Skip Non-Message Events",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "systemMessage": "You are Priya, an expert real estate AI assistant for Prime Realty India. You speak fluently in both Hindi and English (Hinglish) as needed.\n\nYour job:\n1. Greet clients warmly and understand their property requirements\n2. Ask key questions: location preference, budget range, BHK requirement, purpose (buy/rent/invest)\n3. Show available properties from your tools\n4. Share property details, videos, and virtual tours\n5. When client shows interest in a specific property, collect their details and schedule a site visit\n6. Once booking is confirmed, inform them a dedicated broker will be assigned\n\nAVAILABLE PROPERTIES (use these as reference):\n- 3BHK Luxury Apartment, Bhopal Kolar Road, ₹65L - 75L, Ready to Move\n- 2BHK Flat, Habibganj, ₹42L - 48L, Under Construction Dec 2025\n- 4BHK Villa, Chinar Park, ₹1.2Cr - 1.5Cr, Ready to Move\n- Commercial Shop, DB Mall Road, ₹25L - 35L, Ready\n- Plot 200sq.yd, Misrod, ₹18L - 22L\n\nIMPORTANT RULES:\n- Always be friendly and professional\n- If client says busy or 'baad mein', note it and say follow-up karenge\n- If client finalizes a property, use the 'Save Booking' tool\n- Never promise things you can't deliver\n- Current date: {{ $now.format('DD MMM YYYY') }}\n\nALWAYS RESPOND IN THE SAME LANGUAGE THE CLIENT USES (Hindi/English/Hinglish)."
+        }
+      },
+      "id": "ai-chat-agent",
+      "name": "Real Estate AI Chat Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [900, 420]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {}
+      },
+      "id": "chat-model",
+      "name": "OpenAI GPT-4o Mini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [780, 620],
+      "credentials": {
+        "openAiApi": {
+          "id": "your-openai-cred-id",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId || $('Parse WhatsApp Message').first().json.sessionId }}",
+        "contextWindowLength": 20
+      },
+      "id": "chat-memory",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [900, 620]
+    },
+    {
+      "parameters": {
+        "name": "Get_Available_Properties",
+        "description": "Get list of available properties based on client requirements like location, budget, BHK, type (buy/rent). Returns property details with prices and availability.",
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $workflow.id }}",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "location",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('location', 'Location or area preference', 'string') }}"
+            },
+            {
+              "name": "budget",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('budget', 'Budget range in lakhs or crores', 'string') }}"
+            },
+            {
+              "name": "bhk",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('bhk', 'BHK configuration like 2BHK, 3BHK', 'string') }}"
+            },
+            {
+              "name": "type",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('type', 'Property type: residential/commercial/plot, purpose: buy/rent/invest', 'string') }}"
+            }
+          ]
+        }
+      },
+      "id": "tool-get-properties",
+      "name": "Get_Available_Properties",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [780, 820]
+    },
+    {
+      "parameters": {
+        "name": "Save_Booking_And_Assign_Broker",
+        "description": "When a client finalizes or confirms interest in a property, use this tool to save the booking to Google Sheets and assign a broker via Telegram. Collect: client name, phone number, property name/id, preferred visit date.",
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $workflow.id }}",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "clientName",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('clientName', 'Full name of the client', 'string') }}"
+            },
+            {
+              "name": "phoneNumber",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('phoneNumber', 'Client phone number with country code', 'string') }}"
+            },
+            {
+              "name": "propertyName",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('propertyName', 'Name or ID of the property client is interested in', 'string') }}"
+            },
+            {
+              "name": "visitDate",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('visitDate', 'Preferred site visit date and time', 'string') }}"
+            },
+            {
+              "name": "budget",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('budget', 'Client budget range', 'string') }}"
+            },
+            {
+              "name": "source",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('source', 'Source: whatsapp/meta_ads/voice_call', 'string') }}"
+            }
+          ]
+        }
+      },
+      "id": "tool-save-booking",
+      "name": "Save_Booking_And_Assign_Broker",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [1020, 820]
+    },
+    {
+      "parameters": {
+        "name": "Mark_Client_As_Busy_For_Followup",
+        "description": "If client says they are busy, not interested right now, or says 'baad mein', 'call later', 'thoda time chahiye' - use this tool to mark them for follow-up. This will schedule an automatic follow-up message.",
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $workflow.id }}",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "phoneNumber",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('phoneNumber', 'Client phone number', 'string') }}"
+            },
+            {
+              "name": "clientName",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('clientName', 'Client name', 'string') }}"
+            },
+            {
+              "name": "reason",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('reason', 'Reason: busy/no_response/asked_for_later', 'string') }}"
+            },
+            {
+              "name": "propertyInterest",
+              "stringValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('propertyInterest', 'Which property they showed interest in, if any', 'string') }}"
+            }
+          ]
+        }
+      },
+      "id": "tool-mark-followup",
+      "name": "Mark_Client_For_Followup",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [1160, 820]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Route to correct agent based on input source\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // Normalize input for AI agent\n  results.push({\n    json: {\n      sessionId: data.sessionId || `session_${data.phoneNumber || Date.now()}`,\n      input: data.message || data.transcript || \n             `Naya lead aaya hai Meta Ads se. Client ka naam: ${data.name || 'Unknown'}. Phone: ${data.phoneNumber}. Interested in: ${data.interestedIn || 'Property'}. Budget: ${data.budget || 'Not specified'}. Please greet them and understand their requirements.`,\n      phoneNumber: data.phoneNumber || '',\n      clientName: data.contactName || data.name || 'Client',\n      source: data.source || 'unknown',\n      isNewLead: data.source === 'meta_ads',\n      timestamp: data.timestamp || new Date().toISOString()\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "normalize-input",
+      "name": "Normalize Input for Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract AI response and prepare WhatsApp reply\nconst agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst sessionId = $input.first().json.sessionId || '';\nconst phoneNumber = sessionId.replace('wa_', '').replace('voice_', '');\n\n// Check if booking was made in the conversation\nconst bookingMade = agentOutput.toLowerCase().includes('booking confirm') || \n                    agentOutput.toLowerCase().includes('broker assign') ||\n                    agentOutput.toLowerCase().includes('site visit scheduled');\n\nreturn [{\n  json: {\n    phoneNumber,\n    message: agentOutput,\n    sessionId,\n    bookingMade,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "extract-response",
+      "name": "Extract Agent Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 420]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "https://graph.facebook.com/v19.0/YOUR_PHONE_NUMBER_ID/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_META_ACCESS_TOKEN"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "messaging_product",
+              "value": "whatsapp"
+            },
+            {
+              "name": "to",
+              "value": "={{ $json.phoneNumber }}"
+            },
+            {
+              "name": "type",
+              "value": "text"
+            }
+          ]
+        },
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $json.phoneNumber }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{ $json.message }}\"\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "send-whatsapp-reply",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1380, 320]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Bookings",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Booking Date": "={{ $json.bookingDate || $now.format('DD/MM/YYYY HH:mm') }}",
+            "Client Name": "={{ $json.clientName }}",
+            "Phone Number": "={{ $json.phoneNumber }}",
+            "Property Name": "={{ $json.propertyName }}",
+            "Budget": "={{ $json.budget }}",
+            "Visit Date": "={{ $json.visitDate }}",
+            "Source": "={{ $json.source }}",
+            "Broker Assigned": "={{ $json.brokerName }}",
+            "Status": "Confirmed",
+            "Notes": "={{ $json.notes || '' }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "save-to-sheets",
+      "name": "Save Booking to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1380, 520],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "your-gsheets-cred-id",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Round-robin broker assignment logic\nconst brokers = [\n  { name: 'Rajesh Kumar', telegramId: '-100BROKER_CHAT_ID_1', phone: '+91XXXXXXXXXX', specialty: 'Residential' },\n  { name: 'Sunil Sharma', telegramId: '-100BROKER_CHAT_ID_2', phone: '+91XXXXXXXXXX', specialty: 'Commercial' },\n  { name: 'Meena Verma', telegramId: '-100BROKER_CHAT_ID_3', phone: '+91XXXXXXXXXX', specialty: 'Plots' }\n];\n\nconst data = $input.first().json;\n\n// Simple round-robin (in production, use Supabase/DB counter)\nconst brokerIndex = Math.floor(Date.now() / 1000) % brokers.length;\nconst assignedBroker = brokers[brokerIndex];\n\n// Select broker based on property type\nconst propertyName = (data.propertyName || '').toLowerCase();\nlet selectedBroker = assignedBroker;\n\nif (propertyName.includes('commercial') || propertyName.includes('shop') || propertyName.includes('office')) {\n  selectedBroker = brokers[1]; // Sunil for commercial\n} else if (propertyName.includes('plot') || propertyName.includes('land')) {\n  selectedBroker = brokers[2]; // Meena for plots\n} else {\n  selectedBroker = brokers[0]; // Rajesh for residential\n}\n\nconst telegramMessage = `🏡 *NEW BOOKING LEAD ASSIGNED TO YOU*\n\n👤 *Client:* ${data.clientName || 'Unknown'}\n📱 *Phone:* ${data.phoneNumber}\n🏠 *Property Interest:* ${data.propertyName || 'Not specified'}\n💰 *Budget:* ${data.budget || 'Not specified'}\n📅 *Site Visit:* ${data.visitDate || 'TBD'}\n📍 *Source:* ${data.source || 'WhatsApp'}\n⏰ *Time:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n\n✅ Please contact the client within 30 minutes!\n💬 WhatsApp them directly: https://wa.me/${(data.phoneNumber || '').replace('+', '')}`;\n\nreturn [{\n  json: {\n    ...data,\n    brokerName: selectedBroker.name,\n    brokerPhone: selectedBroker.phone,\n    brokerTelegramId: selectedBroker.telegramId,\n    telegramMessage,\n    bookingDate: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "assign-broker",
+      "name": "Assign Broker (Round Robin)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 620]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.brokerTelegramId }}",
+        "text": "={{ $json.telegramMessage }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "telegram-broker-notify",
+      "name": "Notify Broker via Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1380, 720],
+      "credentials": {
+        "telegramApi": {
+          "id": "your-telegram-cred-id",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Follow_Up_Queue",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Added Date": "={{ $now.format('DD/MM/YYYY HH:mm') }}",
+            "Client Name": "={{ $json.clientName }}",
+            "Phone Number": "={{ $json.phoneNumber }}",
+            "Reason": "={{ $json.reason }}",
+            "Property Interest": "={{ $json.propertyInterest || 'General' }}",
+            "Follow Up Count": "0",
+            "Last Follow Up": "Never",
+            "Status": "Pending",
+            "Source": "={{ $json.source || 'WhatsApp' }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "save-followup-queue",
+      "name": "Add to Follow-up Queue",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1380, 920],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "your-gsheets-cred-id",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Follow_Up_Queue",
+          "mode": "name"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Status",
+              "condition": "TEXT_EQ",
+              "value": "Pending"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": false
+        }
+      },
+      "id": "get-followup-list",
+      "name": "Get Pending Follow-ups",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [440, 900],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "your-gsheets-cred-id",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "followup-count-check",
+              "leftValue": "={{ Number($json['Follow Up Count']) }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "followup-count-filter",
+      "name": "Check Follow-up Count < 3",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [660, 900]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate personalized follow-up messages\nconst items = $input.all();\nconst results = [];\n\nconst followUpTemplates = [\n  // Follow-up 1 (first follow-up)\n  (name, property) => `Namaste ${name}! 🙏\n\nAapne hamare saath property dekhne mein interest dikhaya tha. Kya aap abhi available hain?\n\n🏡 ${property || 'Hamare paas kai behtareen properties available hain'}\n\nKhushqi se aapki madad karenge! Reply karein ya call karein. 😊\n\n- Prime Realty Team`,\n  \n  // Follow-up 2 (second follow-up)\n  (name, property) => `Hello ${name}! 👋\n\nAaj hamare paas ek special offer hai! 🎉\n\n✨ Free Site Visit\n✨ Home Loan Assistance\n✨ Legal Verification Free\n\n${property ? `Aapke pasand ki property: *${property}* abhi bhi available hai!` : 'Best deals pe baat karein!'}\n\nAaj hi reply karein - limited slots available! 📞`,\n  \n  // Follow-up 3 (final follow-up)\n  (name, property) => `Ek aakhri baar ${name} ji! 🙏\n\nHum samajhte hain aap busy hain. Jab bhi time mile, hum available hain.\n\n📞 Seedha call karein: [YOUR_COMPANY_PHONE]\n🌐 Website: [YOUR_WEBSITE]\n\nAapke sapnon ka ghar dhundhne mein hamara commitment hai! 🏡\n\n- Prime Realty Team\n(Agar interested nahi hain to yeh message ignore karein)`\n];\n\nfor (const item of items) {\n  const followUpCount = Number(item.json['Follow Up Count'] || 0);\n  const templateFn = followUpTemplates[Math.min(followUpCount, 2)];\n  const message = templateFn(\n    item.json['Client Name'] || 'Ji',\n    item.json['Property Interest'] || ''\n  );\n  \n  results.push({\n    json: {\n      ...item.json,\n      followUpMessage: message,\n      newFollowUpCount: followUpCount + 1,\n      rowIndex: item.json.$rowNumber || item.json.rowNumber\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "generate-followup-msg",
+      "name": "Generate Follow-up Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 900]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "https://graph.facebook.com/v19.0/YOUR_PHONE_NUMBER_ID/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_META_ACCESS_TOKEN"
+            }
+          ]
+        },
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $json['Phone Number'] }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{ $json.followUpMessage }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "send-followup-msg",
+      "name": "Send Follow-up WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1140, 900]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Follow_Up_Queue",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Follow Up Count": "={{ $json.newFollowUpCount }}",
+            "Last Follow Up": "={{ $now.format('DD/MM/YYYY HH:mm') }}",
+            "Status": "={{ $json.newFollowUpCount >= 3 ? 'Completed' : 'Pending' }}"
+          }
+        },
+        "where": {
+          "values": [
+            {
+              "column": "Phone Number",
+              "value": "={{ $json['Phone Number'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-followup-count",
+      "name": "Update Follow-up Count",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1380, 1100],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "your-gsheets-cred-id",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'ok', received: true }) }}"
+      },
+      "id": "webhook-response-wa",
+      "name": "Webhook Response OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1600, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'ok', received: true }) }}"
+      },
+      "id": "webhook-response-meta",
+      "name": "Webhook Response Meta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1600, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare voice call response for VAPI\nconst agentOutput = $input.first().json.output || 'Namaste! Main aapki kaise madad kar sakta hoon?';\n\n// Format for VAPI response\nreturn [{\n  json: {\n    response: agentOutput,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "format-voice-response",
+      "name": "Format Voice Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1380, 700]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ response: $json.response, timestamp: $json.timestamp }) }}"
+      },
+      "id": "voice-webhook-response",
+      "name": "Voice Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1600, 700]
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse WhatsApp Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta Ads Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Meta Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice Call Webhook (VAPI)": {
+      "main": [
+        [
+          {
+            "node": "Parse Voice Call Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-up Scheduler (Every 4hrs)": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Follow-ups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse WhatsApp Message": {
+      "main": [
+        [
+          {
+            "node": "Skip Non-Message Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Meta Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input for Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Voice Call Data": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input for Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Non-Message Events": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Normalize Input for Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input for Agent": {
+      "main": [
+        [
+          {
+            "node": "Real Estate AI Chat Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Real Estate AI Chat Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o Mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Real Estate AI Chat Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Real Estate AI Chat Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Available_Properties": {
+      "ai_tool": [
+        [
+          {
+            "node": "Real Estate AI Chat Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save_Booking_And_Assign_Broker": {
+      "ai_tool": [
+        [
+          {
+            "node": "Real Estate AI Chat Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark_Client_For_Followup": {
+      "ai_tool": [
+        [
+          {
+            "node": "Real Estate AI Chat Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Assign Broker (Round Robin)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign Broker (Round Robin)": {
+      "main": [
+        [
+          {
+            "node": "Save Booking to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Broker via Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Reply": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Follow-ups": {
+      "main": [
+        [
+          {
+            "node": "Check Follow-up Count < 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Follow-up Count < 3": {
+      "main": [
+        [
+          {
+            "node": "Generate Follow-up Messages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Generate Follow-up Messages": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-up WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Follow-up WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Update Follow-up Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Voice Response": {
+      "main": [
+        [
+          {
+            "node": "Voice Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Real Estate",
+      "id": "re-tag-1"
+    },
+    {
+      "name": "AI Agent",
+      "id": "re-tag-2"
+    },
+    {
+      "name": "WhatsApp",
+      "id": "re-tag-3"
+    }
+  ],
+  "triggerCount": 4,
+  "updatedAt": "2026-08-06T00:00:00.000Z",
+  "versionId": "realstate-v1"
+}
