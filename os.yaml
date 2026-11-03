@@ -366,6 +366,7 @@ pages:
   - id: inbox
     covers: [R11, R21]
     route: /inbox
+    group: Main
     label: Inbox
     icon: MessagesSquare
     desc: Every WhatsApp and call conversation — take over from the AI agent and reply by hand
@@ -383,6 +384,7 @@ pages:
   - id: leads
     covers: [R20, R1]
     route: /leads
+    group: Sales
     label: Leads
     icon: Users
     desc: Every lead from WhatsApp and calls, from first message to booked or lost
@@ -424,6 +426,7 @@ pages:
   - id: visits
     covers: [R13, R16]
     route: /site-visits
+    group: Sales
     label: Site visits
     icon: CalendarCheck
     desc: Every site visit and booking — confirm, record the outcome, see the broker log
@@ -453,6 +456,7 @@ pages:
   - id: inventory
     covers: [R12, R14, R4]
     route: /inventory
+    group: Properties
     label: Inventory
     icon: Building2
     desc: Every property the AI agent may offer — only Available ones are offered
@@ -471,21 +475,23 @@ pages:
         filters: [Type, Area_Name, Config]
         actions: { header: [add_property], row: [edit_property, set_status] }
     modals:
-      - { id: add_property, covers: [R12], kind: create, title: Add property, direct: insert, size: lg, submit: Add property, success: "Property added", context: { City: Bhopal }, primary: true,
+      - { id: add_property, covers: [R12], kind: create, title: Add property, direct: insert, size: lg, submit: Add property, success: "Property added", context: { City: Bhopal, Status: Available, Size_Unit: sq.ft }, primary: true,
+          # 8 fields — the R12 list (name, type, location, price range, BHK, area, tags; status starts Available). Floor, parking,
+          # possession and the unit are details added with Edit (U6: keep the first form short)
           fields: [ { key: Name, label: Property name, type: text, required: true, placeholder: "e.g. 3BHK Luxury Apartment" }, { key: Type, label: Type, type: select, options: [Residential, Commercial, Plot], required: true },
                     { key: Area_Name, label: Location, type: text, required: true, placeholder: "Area, e.g. Kolar Road" }, { key: Config, label: BHK / config, type: select, options: [1 BHK, 2 BHK, 3 BHK, 4 BHK, Shop, Office, Plot, Land], required: true },
                     { key: Price_Min_INR, label: Price from (₹), type: number, required: true }, { key: Price_Max_INR, label: Price to (₹), type: number, required: true },
-                    { key: Size, label: Area, type: number }, { key: Size_Unit, label: Unit, type: select, options: [sq.ft, sq.yd, acre], default: sq.ft },
-                    { key: Floor, label: Floor, type: text }, { key: Parking, label: Parking, type: text }, { key: Possession, label: Possession, type: text, placeholder: "Ready to Move / Dec 2026" },
-                    { key: Status, label: Status, type: select, options: [Available, Under Negotiation, Booked, Sold], default: Available, required: true }, { key: Tags, label: Tags (comma separated), type: text, placeholder: "Ready to Move, Gated Society, RERA Approved" } ] }
+                    { key: Size, label: Area (sq.ft), type: number }, { key: Tags, label: Tags (comma separated), type: text, placeholder: "Ready to Move, Gated Society, RERA Approved" } ] }
       - { id: edit_property, kind: edit, title: Edit property, direct: patch, summary: [Name, Area_Name], submit: Save,
-          fields: [ { key: Price_Min_INR, label: Price from (₹), type: number }, { key: Price_Max_INR, label: Price to (₹), type: number }, { key: Possession, label: Possession, type: text }, { key: Tags, label: Tags, type: text } ] }
+          fields: [ { key: Price_Min_INR, label: Price from (₹), type: number }, { key: Price_Max_INR, label: Price to (₹), type: number }, { key: Size, label: Area, type: number }, { key: Size_Unit, label: Unit, type: select, options: [sq.ft, sq.yd, acre] },
+                    { key: Floor, label: Floor, type: text }, { key: Parking, label: Parking, type: text }, { key: Possession, label: Possession, type: text, placeholder: "Ready to Move / Dec 2026" }, { key: Tags, label: Tags, type: text } ] }
       - { id: set_status, kind: status, title: Change status, direct: patch, summary: [Name, Status], submit: Save,
           fields: [ { key: Status, label: Status, type: select, options_status: true, required: true } ] }
 
   - id: followups
     covers: [R9, R22, R8]
     route: /follow-ups
+    group: Sales
     label: Follow-ups
     icon: BellRing
     desc: Clients who said busy or "baad mein" — the agent nudges them up to three times
@@ -509,6 +515,7 @@ pages:
   - id: calls
     covers: [R10]
     route: /calls
+    group: Automation
     label: Call recordings
     icon: PhoneCall
     desc: Calls the AI voice agent answered, with transcript and outcome
@@ -529,6 +536,7 @@ pages:
   - id: brokers
     covers: [R16, R6]
     route: /brokers
+    group: Team
     label: Brokers
     icon: UserCog
     desc: The brokers the AI agent assigns visits to, by specialty, with their visits and closures
@@ -558,7 +566,7 @@ pages:
     route: /ai-agents
     label: AI agents
     icon: Bot
-    group: Setup
+    group: Automation
     desc: The WhatsApp agent, the voice agent and the follow-up scheduler — recent runs and failures
     subtitle: What the three agents did, and every run that failed
     entity: agent_runs
@@ -578,7 +586,7 @@ pages:
     route: /agent-settings
     label: Agent settings
     icon: SlidersHorizontal
-    group: Setup
+    group: Automation
     desc: The agent's name and language, follow-up timing and company details
     subtitle: Changes reach the agents on their next run
     entity: agent_settings

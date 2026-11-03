@@ -82,8 +82,8 @@ Data: **PostgreSQL** (one database per client, single-tenant) · security: **§1
 | Site visits | Visit outcome | status: 4 fields · direct |
 | Site visits | Reschedule or reassign | edit: 2 fields · direct |
 | Site visits | Send confirmation to client | status: 0 fields · VISITS |
-| Inventory | Add property | create: 13 fields · direct |
-| Inventory | Edit property | edit: 4 fields · direct |
+| Inventory | Add property | create: 8 fields · direct |
+| Inventory | Edit property | edit: 8 fields · direct |
 | Inventory | Change status | status: 1 field · direct |
 | Follow-ups | Reschedule nudge | edit: 1 field · direct |
 | Follow-ups | Stop follow-ups | status: 0 fields · direct |

@@ -17,6 +17,7 @@ export const NAV = [
     "label": "Inbox",
     "icon": "MessagesSquare",
     "desc": "Every WhatsApp and call conversation — take over from the AI agent and reply by hand",
+    "group": "Main",
     "badge": {
       "entity": "leads",
       "where": "AI_Mode=Off and Stage not in [Booked, Lost]"
@@ -30,6 +31,7 @@ export const NAV = [
     "label": "Leads",
     "icon": "Users",
     "desc": "Every lead from WhatsApp and calls, from first message to booked or lost",
+    "group": "Sales",
     "subtitle": "Every enquiry the AI agent captured, by stage"
   },
   {
@@ -39,6 +41,7 @@ export const NAV = [
     "label": "Site visits",
     "icon": "CalendarCheck",
     "desc": "Every site visit and booking — confirm, record the outcome, see the broker log",
+    "group": "Sales",
     "subtitle": "Visits the AI agent and the office booked, and how each one ended"
   },
   {
@@ -48,6 +51,7 @@ export const NAV = [
     "label": "Inventory",
     "icon": "Building2",
     "desc": "Every property the AI agent may offer — only Available ones are offered",
+    "group": "Properties",
     "subtitle": "The AI agent offers only what is Available here, the moment you change it"
   },
   {
@@ -57,6 +61,7 @@ export const NAV = [
     "label": "Follow-ups",
     "icon": "BellRing",
     "desc": "Clients who said busy or \"baad mein\" — the agent nudges them up to three times",
+    "group": "Sales",
     "subtitle": "The AI agent sends up to three nudges; stop or reschedule any of them here"
   },
   {
@@ -66,6 +71,7 @@ export const NAV = [
     "label": "Call recordings",
     "icon": "PhoneCall",
     "desc": "Calls the AI voice agent answered, with transcript and outcome",
+    "group": "Automation",
     "subtitle": "Every call the AI voice agent answered — transcript, outcome and recording"
   },
   {
@@ -75,6 +81,7 @@ export const NAV = [
     "label": "Brokers",
     "icon": "UserCog",
     "desc": "The brokers the AI agent assigns visits to, by specialty, with their visits and closures",
+    "group": "Team",
     "subtitle": "Who gets which visit — residential, commercial or plots — and how each is closing"
   },
   {
@@ -84,7 +91,7 @@ export const NAV = [
     "label": "AI agents",
     "icon": "Bot",
     "desc": "The WhatsApp agent, the voice agent and the follow-up scheduler — recent runs and failures",
-    "group": "Setup",
+    "group": "Automation",
     "subtitle": "What the three agents did, and every run that failed"
   },
   {
@@ -94,7 +101,7 @@ export const NAV = [
     "label": "Agent settings",
     "icon": "SlidersHorizontal",
     "desc": "The agent's name and language, follow-up timing and company details",
-    "group": "Setup",
+    "group": "Automation",
     "subtitle": "Changes reach the agents on their next run"
   },
   {

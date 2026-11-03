@@ -240,6 +240,7 @@ export const PAGES = [
       "R21"
     ],
     "route": "/inbox",
+    "group": "Main",
     "label": "Inbox",
     "icon": "MessagesSquare",
     "desc": "Every WhatsApp and call conversation — take over from the AI agent and reply by hand",
@@ -310,6 +311,7 @@ export const PAGES = [
       "R1"
     ],
     "route": "/leads",
+    "group": "Sales",
     "label": "Leads",
     "icon": "Users",
     "desc": "Every lead from WhatsApp and calls, from first message to booked or lost",
@@ -724,6 +726,7 @@ export const PAGES = [
       "R16"
     ],
     "route": "/site-visits",
+    "group": "Sales",
     "label": "Site visits",
     "icon": "CalendarCheck",
     "desc": "Every site visit and booking — confirm, record the outcome, see the broker log",
@@ -999,6 +1002,7 @@ export const PAGES = [
       "R4"
     ],
     "route": "/inventory",
+    "group": "Properties",
     "label": "Inventory",
     "icon": "Building2",
     "desc": "Every property the AI agent may offer — only Available ones are offered",
@@ -1159,7 +1163,9 @@ export const PAGES = [
         "submit": "Add property",
         "success": "Property added",
         "context": {
-          "City": "Bhopal"
+          "City": "Bhopal",
+          "Status": "Available",
+          "Size_Unit": "sq.ft"
         },
         "primary": true,
         "fields": [
@@ -1218,48 +1224,8 @@ export const PAGES = [
           },
           {
             "key": "Size",
-            "label": "Area",
+            "label": "Area (sq.ft)",
             "type": "number"
-          },
-          {
-            "key": "Size_Unit",
-            "label": "Unit",
-            "type": "select",
-            "options": [
-              "sq.ft",
-              "sq.yd",
-              "acre"
-            ],
-            "default": "sq.ft"
-          },
-          {
-            "key": "Floor",
-            "label": "Floor",
-            "type": "text"
-          },
-          {
-            "key": "Parking",
-            "label": "Parking",
-            "type": "text"
-          },
-          {
-            "key": "Possession",
-            "label": "Possession",
-            "type": "text",
-            "placeholder": "Ready to Move / Dec 2026"
-          },
-          {
-            "key": "Status",
-            "label": "Status",
-            "type": "select",
-            "options": [
-              "Available",
-              "Under Negotiation",
-              "Booked",
-              "Sold"
-            ],
-            "default": "Available",
-            "required": true
           },
           {
             "key": "Tags",
@@ -1291,9 +1257,35 @@ export const PAGES = [
             "type": "number"
           },
           {
+            "key": "Size",
+            "label": "Area",
+            "type": "number"
+          },
+          {
+            "key": "Size_Unit",
+            "label": "Unit",
+            "type": "select",
+            "options": [
+              "sq.ft",
+              "sq.yd",
+              "acre"
+            ]
+          },
+          {
+            "key": "Floor",
+            "label": "Floor",
+            "type": "text"
+          },
+          {
+            "key": "Parking",
+            "label": "Parking",
+            "type": "text"
+          },
+          {
             "key": "Possession",
             "label": "Possession",
-            "type": "text"
+            "type": "text",
+            "placeholder": "Ready to Move / Dec 2026"
           },
           {
             "key": "Tags",
@@ -1333,6 +1325,7 @@ export const PAGES = [
       "R8"
     ],
     "route": "/follow-ups",
+    "group": "Sales",
     "label": "Follow-ups",
     "icon": "BellRing",
     "desc": "Clients who said busy or \"baad mein\" — the agent nudges them up to three times",
@@ -1478,6 +1471,7 @@ export const PAGES = [
       "R10"
     ],
     "route": "/calls",
+    "group": "Automation",
     "label": "Call recordings",
     "icon": "PhoneCall",
     "desc": "Calls the AI voice agent answered, with transcript and outcome",
@@ -1609,6 +1603,7 @@ export const PAGES = [
       "R6"
     ],
     "route": "/brokers",
+    "group": "Team",
     "label": "Brokers",
     "icon": "UserCog",
     "desc": "The brokers the AI agent assigns visits to, by specialty, with their visits and closures",
@@ -1837,7 +1832,7 @@ export const PAGES = [
     "route": "/ai-agents",
     "label": "AI agents",
     "icon": "Bot",
-    "group": "Setup",
+    "group": "Automation",
     "desc": "The WhatsApp agent, the voice agent and the follow-up scheduler — recent runs and failures",
     "subtitle": "What the three agents did, and every run that failed",
     "entity": "agent_runs",
@@ -1931,7 +1926,7 @@ export const PAGES = [
     "route": "/agent-settings",
     "label": "Agent settings",
     "icon": "SlidersHorizontal",
-    "group": "Setup",
+    "group": "Automation",
     "desc": "The agent's name and language, follow-up timing and company details",
     "subtitle": "Changes reach the agents on their next run",
     "entity": "agent_settings",
