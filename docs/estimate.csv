@@ -1,4 +1,4 @@
 workflow,action,trigger,runs_per_month,credits_per_run,credits_per_month,model,sends,source
-MESSAGES,reply,reply from the OS,200,7,1400,none,whatsapp,declared
-VISITS,schedule_visit,schedule visit from the OS,20,7,140,none,whatsapp,declared
-VISITS,confirm_client,confirm client from the OS,38,7,266,none,whatsapp,declared
+MESSAGES,reply,reply from the OS,200,7,1400,none,whatsapp,flow json
+VISITS,schedule_visit,schedule visit from the OS,20,9,180,none,whatsapp,flow json
+VISITS,confirm_client,confirm client from the OS,38,7,266,none,whatsapp,flow json
