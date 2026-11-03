@@ -379,6 +379,9 @@ pages:
     modals:
       - { id: take_over, kind: status, title: Take over from the AI agent, entity: leads, direct: patch, summary: [Name, Phone], submit: Take over, context: { AI_Mode: "Off" }, fields: [] }
       - { id: hand_back, kind: status, title: Hand back to the AI agent, entity: leads, direct: patch, summary: [Name, Phone], submit: Hand back, context: { AI_Mode: "On" }, fields: [] }
+      # Declares MESSAGES.reply on this page so the server permits it; the ConversationInbox composer calls it with the typed reply.
+      # (A `via: custom` action alone is not added to the role's permitted actions — kit gap, reported.) Never opened as a modal.
+      - { id: send_reply, kind: custom, title: Send reply, entity: messages, flow: MESSAGES, action: reply, fields: [] }
     actions: { header: [], row: [take_over, hand_back] }
 
   - id: leads

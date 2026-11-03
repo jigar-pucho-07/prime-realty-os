@@ -19,7 +19,7 @@
 Shell per portal: admin=sidebar (`src/config/design.js`); nav from `src/config/nav.js`; tone pucho, radius pucho, density comfortable, sidebar light (`src/config/tokens.css`); header title = active page label. Login → first permitted page. Roles: admin (overview, inbox, leads, visits, followups, inventory, calls, ai_agents, agent_settings, brokers, settings, users), broker (my_visits, my_leads, my_followups, settings).
 ## Workflow wiring (screen → flow.action)
 - Dashboard `/` → direct patch (Assign broker), direct patch (Visit outcome), direct patch (Stop follow-ups)
-- Inbox `/inbox` → direct patch (Take over from the AI agent), direct patch (Hand back to the AI agent)
+- Inbox `/inbox` → direct patch (Take over from the AI agent), direct patch (Hand back to the AI agent), `MESSAGES.reply` (Send reply)
 - Leads `/leads` → direct insert (Add lead), `VISITS.schedule_visit` (Book site visit), direct patch (Assign broker), direct patch (Mark lost)
 - Site visits `/site-visits` → direct patch (Visit outcome), direct patch (Reschedule or reassign), `VISITS.confirm_client` (Send confirmation to client)
 - Inventory `/inventory` → direct insert (Add property), direct patch (Edit property), direct patch (Change status)

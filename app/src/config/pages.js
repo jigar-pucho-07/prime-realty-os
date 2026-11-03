@@ -281,6 +281,15 @@ export const PAGES = [
           "AI_Mode": "On"
         },
         "fields": []
+      },
+      {
+        "id": "send_reply",
+        "kind": "custom",
+        "title": "Send reply",
+        "entity": "messages",
+        "flow": "MESSAGES",
+        "action": "reply",
+        "fields": []
       }
     ],
     "actions": {

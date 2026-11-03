@@ -75,6 +75,7 @@ Data: **PostgreSQL** (one database per client, single-tenant) · security: **§1
 | Dashboard | Stop follow-ups | status: 0 fields · direct |
 | Inbox | Take over from the AI agent | status: 0 fields · direct |
 | Inbox | Hand back to the AI agent | status: 0 fields · direct |
+| Inbox | Send reply | custom: 0 fields · MESSAGES |
 | Leads | Add lead | create: 7 fields · direct |
 | Leads | Book site visit | custom: 5 fields · VISITS |
 | Leads | Assign broker | edit: 1 field · direct |
@@ -115,7 +116,7 @@ Data: **PostgreSQL** (one database per client, single-tenant) · security: **§1
 - API keys and tokens on any screen — connections live in Pucho Studio (X6)
 
 ## Footprint (lean frontend, v4.3)
-- footprint: 13 pages in the nav (0 hidden) · 23 KPIs · 4 charts · 21 modals · 5 drawer tabs · for 22 requirements
+- footprint: 13 pages in the nav (0 hidden) · 23 KPIs · 4 charts · 22 modals · 5 drawer tabs · for 22 requirements
 - Budget: overview ≤ 4 KPIs · ≤ 2 charts · ≤ 3 queues; a page ≤ 4 KPIs · ≤ 6 modals · drawer ≤ 3 tabs; nav pages ≤ requirements. Pages marked `badge: Preview` stay off the nav until `os.show_preview: true`.
 - Within budget.
 
