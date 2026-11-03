@@ -234,6 +234,7 @@ export const PAGES = [
     "desc": "Every WhatsApp and call conversation — take over from the AI agent and reply by hand",
     "subtitle": "Read what the AI agent said, take over when a client needs a person, hand back when done",
     "entity": "messages",
+    "export": false,
     "badge": {
       "entity": "leads",
       "where": "AI_Mode=Off and Stage not in [Booked, Lost]"
