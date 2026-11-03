@@ -3,7 +3,7 @@
 //   SCOPES[role][entity]  the column a self-service role is pinned to (every page it opens filters `Col={{user}}`)
 //   ACTIONS[role]         'flow:<FLOW>.<action>' / 'direct:<op>:<entity>' keys declared on pages the role can open
 //   PUBLIC_ENTITIES[page] / PUBLIC_ACTIONS[page]  what a `public: true` page may read and submit without a sign-in
-export const ENTITY_ACCESS = {"admin": ["*"], "broker": ["bookings", "followups", "leads", "messages"]};
+export const ENTITY_ACCESS = {"admin": ["agent_runs", "agent_settings", "bookings", "brokers", "calls", "followups", "leads", "messages", "properties"], "broker": ["bookings", "followups", "leads", "messages"]};
 export const SCOPES = {"broker": {"leads": "Broker", "followups": "Broker", "bookings": "Broker", "messages": "Broker", "calls": "Broker"}};
 export const ACTIONS = {"admin": ["direct:insert:brokers", "direct:insert:leads", "direct:insert:properties", "direct:patch:agent_settings", "direct:patch:bookings", "direct:patch:brokers", "direct:patch:followups", "direct:patch:leads", "direct:patch:properties", "flow:VISITS.confirm_client", "flow:VISITS.schedule_visit"], "broker": ["direct:patch:bookings"]};
 export const PUBLIC_ENTITIES = {};

@@ -62,7 +62,7 @@ export const PAGES = [
         "entity": "leads",
         "action": "assign_broker",
         "action_label": "Assign",
-        "sub": "Area_Pref",
+        "sub": "Property_Interest",
         "link": "/leads",
         "label": "Unassigned",
         "tone": "warn",
@@ -122,18 +122,6 @@ export const PAGES = [
           "type": "text",
           "sub": "Property_Name",
           "grow": true
-        },
-        {
-          "key": "Budget_INR",
-          "type": "money"
-        },
-        {
-          "key": "Source",
-          "type": "tag"
-        },
-        {
-          "key": "Broker",
-          "type": "text"
         },
         {
           "key": "Visit_At",
@@ -1991,6 +1979,8 @@ export const PAGES = [
     "blocks": [
       {
         "type": "queue",
+        "title": "Your site visits",
+        "empty": "No visits assigned to you yet — the office or the AI agent books them, and they appear here.",
         "entity": "bookings",
         "where": "Broker={{user}}",
         "log": "my_visit_outcome",

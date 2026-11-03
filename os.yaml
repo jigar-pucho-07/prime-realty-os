@@ -58,7 +58,7 @@ requirements:
 
 roles:
   - { key: admin,  label: Office admin, desc: "Runs the desk: inbox, leads, site visits, inventory, brokers and the AI agent", home: /,
-      pages: ["*"], demo: { email: admin@primerealty.pucho.ai, password: admin12345, name: Arvind Kumar } }
+      pages: [overview, inbox, leads, visits, followups, inventory, calls, ai_agents, agent_settings, brokers, settings], demo: { email: admin@primerealty.pucho.ai, password: admin12345, name: Arvind Kumar } }
   - { key: broker, label: Broker, desc: "Works the site visits and leads assigned to them", home: /my-visits,
       pages: [my_visits, my_leads, my_followups, settings],
       scope: { leads: Broker, bookings: Broker, followups: Broker, messages: Broker, calls: Broker },
@@ -348,14 +348,14 @@ pages:
     quick_links: false
     kpis: [ { metric: leads_month }, { metric: visits_open }, { metric: booked_month }, { metric: pipeline_value } ]
     queues:
-      - { metric: unassigned,   entity: leads,    action: assign_broker, action_label: Assign, sub: Area_Pref, link: /leads }
+      - { metric: unassigned,   entity: leads,    action: assign_broker, action_label: Assign, sub: Property_Interest, link: /leads }
       - { metric: visits_today, entity: bookings, action: visit_outcome, action_label: Visit outcome, sub: Property_Name, link: /site-visits }
       - { metric: followups_due, entity: followups, action: stop_followup, action_label: Stop, sub: Reason, link: /follow-ups }
     charts:
       - { id: lead-funnel, type: funnel, entity: leads, title: Lead funnel, where: "Stage!=Lost" }
       - { id: lead-sources, type: breakdown, entity: leads, title: Lead sources, group: Source }
     recent: { title: Recent bookings, entity: bookings, date: Created_At, limit: 8, link: /site-visits,
-              columns: [ { key: Client_Name, type: text, sub: Property_Name, grow: true }, { key: Budget_INR, type: money }, { key: Source, type: tag }, { key: Broker, type: text }, { key: Visit_At, type: date }, { key: Status, type: badge } ] }
+              columns: [ { key: Client_Name, type: text, sub: Property_Name, grow: true }, { key: Visit_At, type: date }, { key: Status, type: badge } ] }
     modals:
       - { id: assign_broker, kind: edit, title: Assign broker, entity: leads, direct: patch, summary: [Name, Area_Pref], submit: Assign, success: "Broker assigned",
           fields: [ { key: Broker, label: Broker, type: select, options_from: brokers.Name, required: true } ] }
@@ -610,6 +610,8 @@ pages:
     roles: [broker]
     blocks:
       - type: queue
+        title: Your site visits
+        empty: "No visits assigned to you yet — the office or the AI agent books them, and they appear here."
         entity: bookings
         where: "Broker={{user}}"
         log: my_visit_outcome

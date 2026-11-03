@@ -4,7 +4,7 @@ _Generated from os.yaml. The step-2 summary: roles and homes, journeys, entities
 ## D1 · Roles and homes
 | role | lands on | pages | in their words |
 |---|---|---|---|
-| Office admin | `/` | * | Runs the desk: inbox, leads, site visits, inventory, brokers and the AI agent |
+| Office admin | `/` | overview, inbox, leads, visits, followups, inventory, calls, ai_agents, agent_settings, brokers, settings, users | Runs the desk: inbox, leads, site visits, inventory, brokers and the AI agent |
 | Broker | `/my-visits` | my_visits, my_leads, my_followups, settings | Works the site visits and leads assigned to them |
 
 ## D2 · Journeys
@@ -63,7 +63,7 @@ Data: **PostgreSQL** (one database per client, single-tenant) · security: **§1
 | AI agents | kpis | kpis (strip) |
 | AI agents | agent_runs | table; drawer per row |
 | Agent settings | agent_settings | table; drawer per row |
-| My site visits | queue | queue: visits_today · Coming up · Visited — not closed |
+| My site visits | Your site visits | queue: visits_today · Coming up · Visited — not closed |
 | My leads | leads | table; drawer per row |
 | My follow-ups | followups | table; drawer per row |
 
