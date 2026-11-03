@@ -1,0 +1,336 @@
+{
+  "entities": [
+    {
+      "name": "leads",
+      "columns": [
+        "Lead_ID",
+        "Created_At",
+        "Name",
+        "Phone",
+        "Source",
+        "Stage",
+        "Purpose",
+        "Property_Type",
+        "BHK",
+        "Area_Pref",
+        "Budget_Min_INR",
+        "Budget_Max_INR",
+        "Property_Interest",
+        "Broker",
+        "AI_Mode",
+        "Lang",
+        "Last_Message",
+        "Last_Message_At",
+        "Next_Followup_At",
+        "Lost_Reason",
+        "Summary"
+      ],
+      "types": {
+        "Lead_ID": "text",
+        "Created_At": "timestamptz",
+        "Name": "text",
+        "Phone": "text",
+        "Source": "text",
+        "Stage": "text",
+        "Purpose": "text",
+        "Property_Type": "text",
+        "BHK": "text",
+        "Area_Pref": "text",
+        "Budget_Min_INR": "numeric",
+        "Budget_Max_INR": "numeric",
+        "Property_Interest": "text",
+        "Broker": "text",
+        "AI_Mode": "boolean",
+        "Lang": "text",
+        "Last_Message": "text",
+        "Last_Message_At": "timestamptz",
+        "Next_Followup_At": "timestamptz",
+        "Lost_Reason": "text",
+        "Summary": "text"
+      },
+      "unique": [
+        "Phone"
+      ],
+      "formats": {
+        "Phone": "phone"
+      }
+    },
+    {
+      "name": "properties",
+      "columns": [
+        "Property_ID",
+        "Created_At",
+        "Name",
+        "Type",
+        "Config",
+        "Area_Name",
+        "City",
+        "Price_Min_INR",
+        "Price_Max_INR",
+        "Size",
+        "Size_Unit",
+        "Floor",
+        "Parking",
+        "Possession",
+        "Status",
+        "Tags"
+      ],
+      "types": {
+        "Property_ID": "text",
+        "Created_At": "timestamptz",
+        "Name": "text",
+        "Type": "text",
+        "Config": "text",
+        "Area_Name": "text",
+        "City": "text",
+        "Price_Min_INR": "numeric",
+        "Price_Max_INR": "numeric",
+        "Size": "numeric",
+        "Size_Unit": "text",
+        "Floor": "text",
+        "Parking": "text",
+        "Possession": "text",
+        "Status": "text",
+        "Tags": "text"
+      }
+    },
+    {
+      "name": "brokers",
+      "columns": [
+        "Broker_ID",
+        "Name",
+        "Phone",
+        "Email",
+        "Specialty",
+        "Experience_Years",
+        "Status",
+        "Joined_On"
+      ],
+      "types": {
+        "Broker_ID": "text",
+        "Name": "text",
+        "Phone": "text",
+        "Email": "text",
+        "Specialty": "text",
+        "Experience_Years": "numeric",
+        "Status": "text",
+        "Joined_On": "text"
+      },
+      "unique": [
+        "Name"
+      ],
+      "formats": {
+        "Phone": "phone",
+        "Email": "email"
+      }
+    },
+    {
+      "name": "bookings",
+      "columns": [
+        "Booking_ID",
+        "Created_At",
+        "Lead_ID",
+        "Client_Name",
+        "Client_Phone",
+        "Property_Name",
+        "Broker",
+        "Visit_At",
+        "Budget_INR",
+        "Source",
+        "Created_By",
+        "Status",
+        "Deal_Value_INR",
+        "Commission_INR",
+        "Cancel_Reason",
+        "Notes"
+      ],
+      "types": {
+        "Booking_ID": "text",
+        "Created_At": "timestamptz",
+        "Lead_ID": "text",
+        "Client_Name": "text",
+        "Client_Phone": "text",
+        "Property_Name": "text",
+        "Broker": "text",
+        "Visit_At": "timestamptz",
+        "Budget_INR": "numeric",
+        "Source": "text",
+        "Created_By": "text",
+        "Status": "text",
+        "Deal_Value_INR": "numeric",
+        "Commission_INR": "numeric",
+        "Cancel_Reason": "text",
+        "Notes": "text"
+      },
+      "formats": {
+        "Client_Phone": "phone"
+      }
+    },
+    {
+      "name": "messages",
+      "columns": [
+        "Message_ID",
+        "At",
+        "Lead_ID",
+        "Lead_Name",
+        "Phone",
+        "Broker",
+        "Channel",
+        "Direction",
+        "Sender",
+        "Text",
+        "Intent",
+        "WA_Message_ID"
+      ],
+      "types": {
+        "Message_ID": "text",
+        "At": "timestamptz",
+        "Lead_ID": "text",
+        "Lead_Name": "text",
+        "Phone": "text",
+        "Broker": "text",
+        "Channel": "text",
+        "Direction": "text",
+        "Sender": "text",
+        "Text": "text",
+        "Intent": "text",
+        "WA_Message_ID": "text"
+      },
+      "formats": {
+        "Phone": "phone"
+      }
+    },
+    {
+      "name": "followups",
+      "columns": [
+        "Followup_ID",
+        "Created_At",
+        "Lead_ID",
+        "Lead_Name",
+        "Phone",
+        "Broker",
+        "Reason",
+        "Property_Interest",
+        "Count",
+        "Max_Count",
+        "Next_Due_At",
+        "Last_Sent_At",
+        "Status"
+      ],
+      "types": {
+        "Followup_ID": "text",
+        "Created_At": "timestamptz",
+        "Lead_ID": "text",
+        "Lead_Name": "text",
+        "Phone": "text",
+        "Broker": "text",
+        "Reason": "text",
+        "Property_Interest": "text",
+        "Count": "numeric",
+        "Max_Count": "numeric",
+        "Next_Due_At": "timestamptz",
+        "Last_Sent_At": "timestamptz",
+        "Status": "text"
+      },
+      "formats": {
+        "Phone": "phone"
+      }
+    },
+    {
+      "name": "calls",
+      "columns": [
+        "Call_ID",
+        "Started_At",
+        "Lead_ID",
+        "Caller_Name",
+        "Phone",
+        "Broker",
+        "VAPI_Call_ID",
+        "Duration_Sec",
+        "Outcome",
+        "Property_Interest",
+        "Transcript",
+        "Recording_URL"
+      ],
+      "types": {
+        "Call_ID": "text",
+        "Started_At": "timestamptz",
+        "Lead_ID": "text",
+        "Caller_Name": "text",
+        "Phone": "text",
+        "Broker": "text",
+        "VAPI_Call_ID": "text",
+        "Duration_Sec": "numeric",
+        "Outcome": "text",
+        "Property_Interest": "text",
+        "Transcript": "text",
+        "Recording_URL": "text"
+      },
+      "unique": [
+        "VAPI_Call_ID"
+      ],
+      "formats": {
+        "Phone": "phone"
+      }
+    },
+    {
+      "name": "agent_runs",
+      "columns": [
+        "Run_ID",
+        "At",
+        "Flow",
+        "Trigger",
+        "Lead_ID",
+        "Status",
+        "Duration_Ms",
+        "Detail"
+      ],
+      "types": {
+        "Run_ID": "text",
+        "At": "timestamptz",
+        "Flow": "text",
+        "Trigger": "text",
+        "Lead_ID": "text",
+        "Status": "text",
+        "Duration_Ms": "numeric",
+        "Detail": "text"
+      }
+    },
+    {
+      "name": "agent_settings",
+      "columns": [
+        "Key",
+        "Value",
+        "Note"
+      ],
+      "types": {
+        "Key": "text",
+        "Value": "text",
+        "Note": "text"
+      }
+    },
+    {
+      "name": "audit_log",
+      "columns": [
+        "Audit_ID",
+        "At",
+        "Who",
+        "Flow",
+        "Action",
+        "Entity",
+        "Record_ID",
+        "Summary"
+      ],
+      "types": {
+        "Audit_ID": "text",
+        "At": "timestamptz",
+        "Who": "text",
+        "Flow": "text",
+        "Action": "text",
+        "Entity": "text",
+        "Record_ID": "text",
+        "Summary": "text"
+      }
+    }
+  ]
+}

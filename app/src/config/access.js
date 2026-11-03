@@ -1,0 +1,13 @@
+// src/config/access.js — GENERATED from os.yaml roles[] × pages[]. What the server lets each role read and do:
+//   ENTITY_ACCESS[role]   entities any page the role can open reads ('*' = every entity)
+//   SCOPES[role][entity]  the column a self-service role is pinned to (every page it opens filters `Col={{user}}`)
+//   ACTIONS[role]         'flow:<FLOW>.<action>' / 'direct:<op>:<entity>' keys declared on pages the role can open
+//   PUBLIC_ENTITIES[page] / PUBLIC_ACTIONS[page]  what a `public: true` page may read and submit without a sign-in
+export const ENTITY_ACCESS = {"admin": ["*"], "broker": ["bookings", "followups", "leads", "messages"]};
+export const SCOPES = {"broker": {"leads": "Broker", "followups": "Broker", "bookings": "Broker", "messages": "Broker", "calls": "Broker"}};
+export const ACTIONS = {"admin": ["direct:insert:brokers", "direct:insert:leads", "direct:insert:properties", "direct:patch:agent_settings", "direct:patch:bookings", "direct:patch:brokers", "direct:patch:followups", "direct:patch:leads", "direct:patch:properties", "flow:VISITS.confirm_client", "flow:VISITS.schedule_visit"], "broker": ["direct:patch:bookings"]};
+export const PUBLIC_ENTITIES = {};
+export const PUBLIC_ACTIONS = {};
+// v5.1 PAGE_ENTITIES[page] / PAGE_ACTIONS[page] — what each page reads and the write keys it declares (lib/roles.ts roleAccess)
+export const PAGE_ENTITIES = {"overview": ["bookings", "brokers", "followups", "leads"], "inbox": ["leads", "messages"], "leads": ["bookings", "brokers", "leads", "messages", "properties"], "visits": ["bookings", "brokers"], "inventory": ["properties"], "followups": ["followups"], "calls": ["calls"], "brokers": ["bookings", "brokers"], "ai_agents": ["agent_runs"], "agent_settings": ["agent_settings"], "my_visits": ["bookings"], "my_leads": ["leads", "messages"], "my_followups": ["followups"], "settings": [], "users": []};
+export const PAGE_ACTIONS = {"overview": ["direct:patch:bookings", "direct:patch:followups", "direct:patch:leads"], "inbox": ["direct:patch:leads"], "leads": ["direct:insert:leads", "direct:patch:leads", "flow:VISITS.schedule_visit"], "visits": ["direct:patch:bookings", "flow:VISITS.confirm_client"], "inventory": ["direct:insert:properties", "direct:patch:properties"], "followups": ["direct:patch:followups"], "calls": [], "brokers": ["direct:insert:brokers", "direct:patch:brokers"], "ai_agents": [], "agent_settings": ["direct:patch:agent_settings"], "my_visits": ["direct:patch:bookings"], "my_leads": [], "my_followups": [], "settings": [], "users": []};

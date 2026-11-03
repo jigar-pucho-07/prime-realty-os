@@ -1,0 +1,9 @@
+Run_ID,At,Flow,Trigger,Lead_ID,Status,Duration_Ms,Detail
+RUN-2026-0101,2026-09-19T10:00:00+05:30,FOLLOWUP_RUN,Schedule every 4 h,,OK,3800,"5 due, 5 sent, 0 completed"
+RUN-2026-0100,2026-09-19T09:16:00+05:30,WA_AGENT,WhatsApp message,LD-2026-0140,Failed,0,WhatsApp send refused: outside the 24-hour window
+RUN-2026-0300,2026-10-29T09:00:00+05:30,FOLLOWUP_RUN,Schedule every 4 h,,OK,2280,"5 due, 5 sent, 0 completed"
+RUN-2026-0299,2026-10-27T08:00:00+05:30,WA_AGENT,WhatsApp message,LD-2026-0140,Failed,0,WhatsApp send refused: outside the 24-hour window
+RUN-2026-0298,2026-10-25T07:00:00+05:30,FOLLOWUP_RUN,Schedule every 4 h,,Skipped,4180,"5 due, 5 sent, 0 completed"
+RUN-2026-0297,2026-10-23T06:00:00+05:30,WA_AGENT,WhatsApp message,LD-2026-0140,OK,0,WhatsApp send refused: outside the 24-hour window
+RUN-2026-0296,2026-10-21T05:00:00+05:30,FOLLOWUP_RUN,Schedule every 4 h,,Failed,3610,"5 due, 5 sent, 0 completed"
+RUN-2026-0295,2026-10-19T04:00:00+05:30,WA_AGENT,WhatsApp message,LD-2026-0140,Skipped,0,WhatsApp send refused: outside the 24-hour window

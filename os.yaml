@@ -1,0 +1,686 @@
+# os.yaml — Prime Realty OS · Pucho OS v5.1.1 · step 2 (decide the OS)
+# Sources: intake/prime-realty-problem-card.md (R1–R22, X1–X6, G1–G9), realstate_dashboard_v2.html, Real Estate AI Agent.json.
+# ⚑ = assumption to confirm with Prime Realty (gaps G1–G9).
+#
+# Flow split (rule zero, method/ai-pipeline.md):
+#   · Built by build_flows.py from this file (app-called, no AI): MESSAGES.reply, VISITS.schedule_visit, VISITS.confirm_client.
+#   · Built at step 6 on the custom-flow path (tools/build_primerealty_flows.py + flowkit), because build_flows cannot express them:
+#       PR - WA_AGENT     inbound WhatsApp → read lead + last 20 messages + matching inventory (CODE) → ONE llm-ai call {intent, fields, reply}
+#                         → parse (declared keys only) → router on intent → booking / follow-up writes → reply → Return
+#       PR - VOICE_AGENT  VAPI caller turn → same brain, sync answer to VAPI, calls row + transcript
+#       PR - FOLLOWUP_RUN schedule every 4 h → due follow-ups → template 1/2/3 (CODE picks) → pucho-whatsapp template → update → Return (no AI)
+#     Each writes only through /api/data with INBOUND_TOKEN. They are traced through rules_in_code below.
+
+os:
+  name: Prime Realty OS
+  slug: prime-realty-os
+  client: Prime Realty India, Bhopal
+  client_short: PR
+  one_liner: Every WhatsApp and phone enquiry answered by the AI agent at once, booked for a site visit with the right broker, and followed up until it closes.
+  tagline: AI lead desk for Prime Realty — WhatsApp and voice in, site visits and bookings out.
+  languages: [en, hi]
+  volume_per_month: 1140          # ⚑ inbound WhatsApp messages (142 leads × 8), gap G1
+  success_metric: Site visits booked per month and lead → booking conversion (sample 142 → 38, 27 %)
+  plan: team
+  brand: { color: "#1A6BFF", name: Prime Realty }
+  audit: true
+  limits: { actions_per_day: 600 }
+
+design:
+  tone: pucho
+  shell: sidebar
+  direction: "An office desk used all day: the inbox and the visit list first, numbers second"
+  sidebar: { action: { label: Add lead, page: leads, modal: add_lead } }
+
+requirements:
+  - { id: R1, text: "A Client who sends a WhatsApp message from a new number becomes a lead, deduplicated on phone" }
+  - { id: R2, text: "The AI agent replies to the Client on WhatsApp in the Client's own language" }
+  - { id: R3, text: "The AI agent asks the Client for location, budget, BHK and purpose" }
+  - { id: R4, text: "The AI agent offers the Client only available properties that match location, budget, BHK and type" }
+  - { id: R5, text: "When the Client agrees to a visit, a site-visit booking is created for the chosen property and date" }
+  - { id: R6, text: "Each new booking is assigned to a Broker by property type: residential, commercial or plots" }
+  - { id: R7, text: "The assigned Broker receives a WhatsApp alert with the Client's name, phone, property, budget and visit time" }
+  - { id: R8, text: "When the Client says busy or \"baad mein\", the lead is queued for follow-up" }
+  - { id: R9, text: "Up to three follow-up messages go to a queued Client on a fixed schedule, then the follow-up stops" }
+  - { id: R10, text: "The AI agent answers a Client's inbound voice call and the call, transcript and outcome are stored" }
+  - { id: R11, text: "The Office admin can take over a conversation from the AI agent and reply by hand" }
+  - { id: R12, text: "The Office admin can add a property with name, type, location, price range, BHK, area, status and tags" }
+  - { id: R13, text: "The Office admin can confirm a booking for a Client and assign the Broker by hand" }
+  - { id: R14, text: "The Office admin sees total leads, bookings confirmed, active properties and revenue pipeline for the month" }
+  - { id: R15, text: "The Office admin sees the lead funnel from total leads to booking confirmed, and the lead sources" }
+  - { id: R16, text: "The Office admin sees each Broker's leads, closed deals, revenue and the assignment log" }
+  - { id: R17, text: "The Office admin sees each automation's runs and failures" }
+  - { id: R18, text: "A Broker signs in and sees only the leads, visits and conversations assigned to them" }
+  - { id: R19, text: "The Office admin sets the agent name, language, follow-up interval, maximum follow-ups and company details" }
+  - { id: R20, text: "A lead moves through stages New → Engaged → Visit scheduled → Booked or Lost" }
+  - { id: R21, text: "The AI agent stops replying to a Client while the Office admin has taken over the conversation" }
+  - { id: R22, text: "A follow-up stops as soon as the Client replies" }
+
+roles:
+  - { key: admin,  label: Office admin, desc: "Runs the desk: inbox, leads, site visits, inventory, brokers and the AI agent", home: /,
+      pages: ["*"], demo: { email: admin@primerealty.pucho.ai, password: admin12345, name: Arvind Kumar } }
+  - { key: broker, label: Broker, desc: "Works the site visits and leads assigned to them", home: /my-visits,
+      pages: [my_visits, my_leads, my_followups, settings],
+      scope: { leads: Broker, bookings: Broker, followups: Broker, messages: Broker, calls: Broker },
+      demo: { email: rajesh@primerealty.pucho.ai, password: broker12345, name: Rajesh Kumar } }
+
+journeys:
+  - { role: admin, does: "Answer a client the AI handed over", lands: inbox,
+      steps: ["Inbox opens on the newest conversation", "Take over", "Type the reply and send"] }
+  - { role: admin, does: "Book a site visit for a lead", lands: leads,
+      steps: ["Leads opens on the board", "Book site visit on the lead", "Pick property, broker and time — Book"] }
+  - { role: admin, does: "Assign an unassigned lead", lands: overview,
+      steps: ["Dashboard opens on Needs action", "Assign on the first Unassigned row", "Pick the broker — Assign"] }
+  - { role: broker, does: "Record how today's visit went", lands: my_visits,
+      steps: ["My site visits opens on Today", "Call the client from the row", "Visit outcome — Visited / Booked / Cancelled"] }
+
+metrics:
+  leads_month:    { entity: leads,     label: Leads this month,     where: "Created_At in month", tone: info, icon: Inbox }
+  unassigned:     { entity: leads,     label: Unassigned,           where: "Broker is empty and Stage not in [Booked, Lost]", tone: warn, icon: UserX }
+  taken_over:     { entity: leads,     label: Taken over from AI,   where: "AI_Mode=Off and Stage not in [Booked, Lost]", tone: info, icon: Hand }
+  visits_open:    { entity: bookings,  label: Visits scheduled,     where: "Status=Scheduled", tone: info, icon: CalendarCheck }
+  visits_today:   { entity: bookings,  label: Visits today,         where: "Visit_At=today and Status=Scheduled", tone: warn, icon: CalendarClock }
+  booked_month:   { entity: bookings,  label: Booked this month,    where: "Status=Booked and Created_At in month", tone: ok, icon: BadgeCheck }
+  pipeline_value: { entity: bookings,  label: Revenue pipeline,     where: "Status in [Scheduled, Visited]", sum: Budget_INR, format: money_l, tone: info, icon: IndianRupee }
+  followups_due:  { entity: followups, label: Follow-ups due,       where: "Next_Due_At<=today and Status=Pending", tone: warn, icon: BellRing }
+  active_props:   { entity: properties, label: Active properties,   where: "Status in [Available, Under Negotiation]", tone: info, icon: Building2 }
+  failed_runs:    { entity: agent_runs, label: Failed runs,         where: "Status=Failed", tone: bad, icon: AlertTriangle }
+
+entities:
+  - name: leads
+    id: { column: Lead_ID, prefix: "LD-" }
+    created: Created_At
+    title: Name
+    subtitle: [Area_Pref]
+    owner: Broker
+    due: { column: Next_Followup_At, closed: "Stage in [Booked, Lost]" }
+    contact: { phone: Phone, whatsapp: Phone }
+    status: { column: Stage, values: [New, Engaged, Visit Scheduled, Booked, Lost] }
+    columns: [Lead_ID, Created_At, Name, Phone, Source, Stage, Purpose, Property_Type, BHK, Area_Pref, Budget_Min_INR, Budget_Max_INR, Property_Interest, Broker, AI_Mode, Lang, Last_Message, Last_Message_At, Next_Followup_At, Lost_Reason, Summary]
+    fields:
+      Phone:          { type: phone, unique: true }
+      Source:         { one_of: [WhatsApp, Voice, Walk-in, Referral] }
+      Purpose:        { one_of: [Buy, Rent, Invest] }
+      Property_Type:  { one_of: [Residential, Commercial, Plot] }
+      AI_Mode:        { one_of: [On, Off] }
+      Lang:           { one_of: [Hinglish, Hindi, English] }
+      Budget_Min_INR: { type: number, min: 0 }
+      Budget_Max_INR: { type: number, min: 0 }
+    transitions:
+      New:             [Engaged, Visit Scheduled, Lost]
+      Engaged:         [Visit Scheduled, Lost]
+      Visit Scheduled: [Booked, Engaged, Lost]
+      Lost:            [Engaged]
+    requires_on:
+      Lost: [Lost_Reason]
+    seed: 12
+    examples:
+      - { Lead_ID: LD-2026-0141, Created_At: "2026-08-06T10:32:00+05:30", Name: Ramesh Singh, Phone: "+919876543210", Source: WhatsApp, Stage: Visit Scheduled, Purpose: Buy, Property_Type: Residential, BHK: 3 BHK, Area_Pref: Kolar Road, Budget_Min_INR: 6500000, Budget_Max_INR: 7500000, Property_Interest: 3BHK Luxury Apartment, Broker: Rajesh Kumar, AI_Mode: On, Lang: Hinglish, Last_Message: "Bhai 3BHK ka price kya hoga final?", Last_Message_At: "2026-08-06T10:38:00+05:30", Next_Followup_At: "2026-08-08T11:00:00+05:30", Summary: "3BHK on Kolar Road, budget around ₹70 L, self-use; visit this weekend" }
+      - { Lead_ID: LD-2026-0140, Created_At: "2026-08-06T09:15:00+05:30", Name: Priya Singh, Phone: "+918765432109", Source: WhatsApp, Stage: Engaged, Purpose: Buy, Property_Type: Residential, BHK: 2 BHK, Area_Pref: Habibganj, Budget_Min_INR: 4200000, Budget_Max_INR: 4800000, Property_Interest: 2BHK Modern Flat, Broker: Meena Verma, AI_Mode: On, Lang: Hinglish, Last_Message: "Loan facility milegi?", Last_Message_At: "2026-08-06T09:20:00+05:30", Summary: "2BHK in Habibganj for self-use, asked about home loan" }
+      - { Lead_ID: LD-2026-0139, Created_At: "2026-08-05T16:10:00+05:30", Name: Ankit Sharma, Phone: "+917654321098", Source: WhatsApp, Stage: Engaged, Purpose: Buy, Property_Type: Residential, BHK: 3 BHK, Area_Pref: Kolar Road, Budget_Min_INR: 6000000, Budget_Max_INR: 7000000, Property_Interest: 3BHK Luxury Apartment, Broker: "", AI_Mode: Off, Lang: Hinglish, Last_Message: "Site visit kab hoga?", Last_Message_At: "2026-08-06T10:15:00+05:30", Summary: "3BHK, ₹60–70 L, wants a visit date" }
+      - { Lead_ID: LD-2026-0138, Created_At: "2026-08-06T09:40:00+05:30", Name: Deepak Mishra, Phone: "+916543210987", Source: Voice, Stage: Visit Scheduled, Purpose: Invest, Property_Type: Plot, BHK: Plot, Area_Pref: Misrod, Budget_Min_INR: 1800000, Budget_Max_INR: 2200000, Property_Interest: Plot 200 sq.yd, Broker: Meena Verma, AI_Mode: On, Lang: Hindi, Last_Message: "Call ended — transcript ready", Last_Message_At: "2026-08-06T09:46:00+05:30", Summary: "Plot for investment in Misrod; visit Friday" }
+      - { Lead_ID: LD-2026-0137, Created_At: "2026-08-05T14:00:00+05:30", Name: Kavita Patel, Phone: "+915432109876", Source: WhatsApp, Stage: New, Purpose: Buy, Property_Type: Residential, BHK: 4 BHK, Area_Pref: Chinar Park, Budget_Min_INR: 12000000, Budget_Max_INR: 15000000, Property_Interest: 4BHK Premium Villa, Broker: "", AI_Mode: On, Lang: Hinglish, Last_Message: "Villa ke photos bhejo please", Last_Message_At: "2026-08-06T08:30:00+05:30" }
+      - { Lead_ID: LD-2026-0136, Created_At: "2026-08-04T12:00:00+05:30", Name: Mohit Jain, Phone: "+914321098765", Source: WhatsApp, Stage: Engaged, Purpose: Buy, Property_Type: Residential, BHK: 4 BHK, Area_Pref: Chinar Park, Budget_Min_INR: 12000000, Budget_Max_INR: 14000000, Property_Interest: 4BHK Premium Villa, Broker: Sunil Sharma, AI_Mode: On, Lang: Hinglish, Last_Message: "Thoda baad mein call karna", Last_Message_At: "2026-08-06T07:30:00+05:30", Next_Followup_At: "2026-08-07T11:00:00+05:30" }
+      - { Lead_ID: LD-2026-0135, Created_At: "2026-08-02T11:00:00+05:30", Name: Aman Tiwari, Phone: "+919988776655", Source: WhatsApp, Stage: Lost, Purpose: Buy, Property_Type: Residential, BHK: 2 BHK, Area_Pref: Habibganj, Budget_Min_INR: 4000000, Budget_Max_INR: 4500000, Property_Interest: 2BHK Modern Flat, Broker: Meena Verma, AI_Mode: On, Lang: Hindi, Lost_Reason: "Bought elsewhere" }
+
+  - name: properties
+    id: { column: Property_ID, prefix: "PR-" }
+    created: Created_At
+    title: Name
+    subtitle: [Area_Name]
+    status: { column: Status, values: [Available, Under Negotiation, Booked, Sold] }
+    columns: [Property_ID, Created_At, Name, Type, Config, Area_Name, City, Price_Min_INR, Price_Max_INR, Size, Size_Unit, Floor, Parking, Possession, Status, Tags]
+    fields:
+      Type:          { one_of: [Residential, Commercial, Plot] }
+      Config:        { one_of: [1 BHK, 2 BHK, 3 BHK, 4 BHK, Shop, Office, Plot, Land] }
+      Size_Unit:     { one_of: [sq.ft, sq.yd, acre] }
+      Price_Min_INR: { type: number, positive: true }
+      Price_Max_INR: { type: number, positive: true }
+      Size:          { type: number, positive: true }
+    seed: 0
+    examples:
+      - { Property_ID: PR-001, Created_At: "2026-07-01T10:00:00+05:30", Name: 3BHK Luxury Apartment, Type: Residential, Config: 3 BHK, Area_Name: Kolar Road, City: Bhopal, Price_Min_INR: 6500000, Price_Max_INR: 7500000, Size: 1450, Size_Unit: sq.ft, Floor: 5th, Parking: 2 Covered, Possession: Ready to Move, Status: Available, Tags: "Ready to Move, Gated Society, RERA Approved" }
+      - { Property_ID: PR-002, Created_At: "2026-07-01T10:00:00+05:30", Name: 2BHK Modern Flat, Type: Residential, Config: 2 BHK, Area_Name: Habibganj, City: Bhopal, Price_Min_INR: 4200000, Price_Max_INR: 4800000, Size: 1050, Size_Unit: sq.ft, Floor: 3rd, Parking: 1 Covered, Possession: Dec 2025, Status: Available, Tags: "RERA Approved" }
+      - { Property_ID: PR-003, Created_At: "2026-07-01T10:00:00+05:30", Name: 4BHK Premium Villa, Type: Residential, Config: 4 BHK, Area_Name: Chinar Park, City: Bhopal, Price_Min_INR: 12000000, Price_Max_INR: 15000000, Size: 3200, Size_Unit: sq.ft, Floor: G+1, Parking: 3 Covered, Possession: Ready to Move, Status: Booked, Tags: "Private Pool, Smart Home, Luxury" }
+      - { Property_ID: PR-004, Created_At: "2026-07-01T10:00:00+05:30", Name: Commercial Shop Space, Type: Commercial, Config: Shop, Area_Name: DB Mall Road, City: Bhopal, Price_Min_INR: 2500000, Price_Max_INR: 3500000, Size: 450, Size_Unit: sq.ft, Floor: Ground, Parking: "", Possession: Ready, Status: Available, Tags: "Main Road, High Footfall" }
+      - { Property_ID: PR-005, Created_At: "2026-07-01T10:00:00+05:30", Name: Plot 200 sq.yd, Type: Plot, Config: Plot, Area_Name: Misrod, City: Bhopal, Price_Min_INR: 1800000, Price_Max_INR: 2200000, Size: 200, Size_Unit: sq.yd, Floor: "", Parking: "", Possession: Ready, Status: Available, Tags: "RERA Approved, Corner Plot" }
+      - { Property_ID: PR-006, Created_At: "2026-07-01T10:00:00+05:30", Name: 3BHK Builder Floor, Type: Residential, Config: 3 BHK, Area_Name: Arera Colony, City: Bhopal, Price_Min_INR: 5500000, Price_Max_INR: 6200000, Size: 1300, Size_Unit: sq.ft, Floor: 2nd, Parking: 1 Covered, Possession: Ready to Move, Status: Sold, Tags: "" }
+      - { Property_ID: PR-007, Created_At: "2026-07-01T10:00:00+05:30", Name: 2BHK Studio Apartment, Type: Residential, Config: 2 BHK, Area_Name: MP Nagar, City: Bhopal, Price_Min_INR: 3500000, Price_Max_INR: 4200000, Size: 890, Size_Unit: sq.ft, Floor: 7th, Parking: 1 Covered, Possession: Ready to Move, Status: Available, Tags: "High Rise, Metro Nearby" }
+      - { Property_ID: PR-008, Created_At: "2026-07-01T10:00:00+05:30", Name: Office Space 1000 sq.ft, Type: Commercial, Config: Office, Area_Name: Hoshangabad Road, City: Bhopal, Price_Min_INR: 5500000, Price_Max_INR: 6500000, Size: 1000, Size_Unit: sq.ft, Floor: 4th, Parking: 5 Open, Possession: Ready, Status: Available, Tags: "Corporate Zone, RERA Approved" }
+      - { Property_ID: PR-009, Created_At: "2026-07-01T10:00:00+05:30", Name: Agricultural Land 2 Acre, Type: Plot, Config: Land, Area_Name: Ratibad, City: Bhopal, Price_Min_INR: 3000000, Price_Max_INR: 3800000, Size: 2, Size_Unit: acre, Floor: "", Parking: "", Possession: Ready, Status: Available, Tags: "Investment Zone, Highway Access" }
+
+  - name: brokers
+    id: { column: Broker_ID, prefix: "BR-" }
+    title: Name
+    subtitle: [Specialty]
+    contact: { phone: Phone, whatsapp: Phone }
+    status: { column: Status, values: [Active, Inactive] }
+    columns: [Broker_ID, Name, Phone, Email, Specialty, Experience_Years, Status, Joined_On]
+    fields:
+      Name:             { unique: true }
+      Specialty:        { one_of: [Residential, Commercial, Plots] }
+      Experience_Years: { type: number, min: 0, max: 60, integer: true }
+    seed: 0
+    examples:
+      - { Broker_ID: BR-001, Name: Rajesh Kumar, Phone: "+919800111001", Email: rajesh@primerealty.example, Specialty: Residential, Experience_Years: 8, Status: Active, Joined_On: "2018-04-01" }
+      - { Broker_ID: BR-002, Name: Sunil Sharma, Phone: "+919800122002", Email: sunil@primerealty.example, Specialty: Commercial, Experience_Years: 6, Status: Active, Joined_On: "2020-06-15" }
+      - { Broker_ID: BR-003, Name: Meena Verma, Phone: "+919800133003", Email: meena@primerealty.example, Specialty: Plots, Experience_Years: 5, Status: Active, Joined_On: "2021-01-10" }
+
+  - name: bookings
+    id: { column: Booking_ID, prefix: "BK-" }
+    created: Created_At
+    title: Client_Name
+    subtitle: [Property_Name]
+    owner: Broker
+    due: { column: Visit_At, closed: "Status in [Booked, Cancelled]" }
+    contact: { phone: Client_Phone, whatsapp: Client_Phone }
+    status: { column: Status, values: [Scheduled, Visited, Booked, Cancelled] }
+    columns: [Booking_ID, Created_At, Lead_ID, Client_Name, Client_Phone, Property_Name, Broker, Visit_At, Budget_INR, Source, Created_By, Status, Deal_Value_INR, Commission_INR, Cancel_Reason, Notes]
+    fields:
+      Client_Phone:   { type: phone }
+      Source:         { one_of: [WhatsApp, Voice, Walk-in, Referral] }
+      Created_By:     { one_of: [AI agent, Office] }
+      Budget_INR:     { type: number, min: 0 }
+      Deal_Value_INR: { type: number, positive: true }
+      Commission_INR: { type: number, min: 0 }
+    transitions:
+      Scheduled: [Visited, Booked, Cancelled]
+      Visited:   [Booked, Cancelled, Scheduled]
+      Cancelled: [Scheduled]
+    requires_on:
+      Booked:    [Deal_Value_INR]
+      Cancelled: [Cancel_Reason]
+    seed: 8
+    examples:
+      - { Booking_ID: BK-2026-1042, Created_At: "2026-08-06T10:40:00+05:30", Lead_ID: LD-2026-0141, Client_Name: Ramesh Singh, Client_Phone: "+919876543210", Property_Name: 3BHK Luxury Apartment, Broker: Rajesh Kumar, Visit_At: "2026-08-08T11:00:00+05:30", Budget_INR: 7200000, Source: WhatsApp, Created_By: AI agent, Status: Scheduled }
+      - { Booking_ID: BK-2026-1041, Created_At: "2026-08-05T12:00:00+05:30", Lead_ID: LD-2026-0140, Client_Name: Priya Sharma, Client_Phone: "+919811122233", Property_Name: 2BHK Modern Flat, Broker: Meena Verma, Visit_At: "2026-08-06T11:00:00+05:30", Budget_INR: 4500000, Source: WhatsApp, Created_By: AI agent, Status: Booked, Deal_Value_INR: 4500000, Commission_INR: 45000 }
+      - { Booking_ID: BK-2026-1040, Created_At: "2026-08-06T11:30:00+05:30", Lead_ID: LD-2026-0136, Client_Name: Mohit Jain, Client_Phone: "+914321098765", Property_Name: 4BHK Premium Villa, Broker: Sunil Sharma, Visit_At: "2026-08-10T11:00:00+05:30", Budget_INR: 13000000, Source: Voice, Created_By: AI agent, Status: Scheduled }
+      - { Booking_ID: BK-2026-1039, Created_At: "2026-08-04T15:00:00+05:30", Lead_ID: "", Client_Name: Sunita Verma, Client_Phone: "+919822233344", Property_Name: Commercial Shop Space, Broker: Sunil Sharma, Visit_At: "2026-08-05T16:00:00+05:30", Budget_INR: 2800000, Source: WhatsApp, Created_By: Office, Status: Booked, Deal_Value_INR: 2800000, Commission_INR: 28000 }
+      - { Booking_ID: BK-2026-1038, Created_At: "2026-08-04T10:00:00+05:30", Lead_ID: LD-2026-0138, Client_Name: Deepak Mishra, Client_Phone: "+916543210987", Property_Name: Plot 200 sq.yd, Broker: Meena Verma, Visit_At: "2026-08-06T10:00:00+05:30", Budget_INR: 2000000, Source: Voice, Created_By: AI agent, Status: Visited }
+      - { Booking_ID: BK-2026-1036, Created_At: "2026-08-02T11:00:00+05:30", Lead_ID: LD-2026-0135, Client_Name: Aman Tiwari, Client_Phone: "+919988776655", Property_Name: 2BHK Modern Flat, Broker: Meena Verma, Visit_At: "2026-08-04T11:00:00+05:30", Budget_INR: 4300000, Source: WhatsApp, Created_By: AI agent, Status: Cancelled, Cancel_Reason: "Bought elsewhere" }
+
+  - name: messages
+    id: { column: Message_ID, prefix: "MSG-" }
+    created: At
+    title: Lead_Name
+    columns: [Message_ID, At, Lead_ID, Lead_Name, Phone, Broker, Channel, Direction, Sender, Text, Intent, WA_Message_ID]
+    fields:
+      Channel:   { one_of: [WhatsApp, Voice] }
+      Direction: { one_of: [In, Out] }
+      Sender:    { one_of: [Client, AI agent, Office] }
+      Intent:    { one_of: [ask, book_visit, later, not_interested, other] }
+    seed: 0
+    examples:
+      - { Message_ID: MSG-2026-0001, At: "2026-08-06T10:32:00+05:30", Lead_ID: LD-2026-0141, Lead_Name: Ramesh Singh, Phone: "+919876543210", Broker: Rajesh Kumar, Channel: WhatsApp, Direction: In, Sender: Client, Text: "Hello, mujhe 3BHK flat dekhna hai Bhopal mein", Intent: ask }
+      - { Message_ID: MSG-2026-0002, At: "2026-08-06T10:32:30+05:30", Lead_ID: LD-2026-0141, Lead_Name: Ramesh Singh, Phone: "+919876543210", Broker: Rajesh Kumar, Channel: WhatsApp, Direction: Out, Sender: AI agent, Text: "Namaste! 🙏 Main Priya hoon, Prime Realty se. Kolar Road pe ek behtareen 3BHK available hai — ₹65L–75L range mein, ready to move! Aapka budget kya hai?", Intent: ask }
+      - { Message_ID: MSG-2026-0003, At: "2026-08-06T10:34:00+05:30", Lead_ID: LD-2026-0141, Lead_Name: Ramesh Singh, Phone: "+919876543210", Broker: Rajesh Kumar, Channel: WhatsApp, Direction: In, Sender: Client, Text: "70 lakh ke around theek rahega", Intent: ask }
+      - { Message_ID: MSG-2026-0004, At: "2026-08-06T10:34:30+05:30", Lead_ID: LD-2026-0141, Lead_Name: Ramesh Singh, Phone: "+919876543210", Broker: Rajesh Kumar, Channel: WhatsApp, Direction: Out, Sender: AI agent, Text: "Perfect! 3BHK — 1,450 sq.ft, ₹72 L (negotiable), 2 covered parking, near DB Mall, ready to move. Kya site visit karna chahenge? This weekend available hai!", Intent: ask }
+      - { Message_ID: MSG-2026-0005, At: "2026-08-06T09:15:00+05:30", Lead_ID: LD-2026-0140, Lead_Name: Priya Singh, Phone: "+918765432109", Broker: Meena Verma, Channel: WhatsApp, Direction: In, Sender: Client, Text: "Hello, 2BHK flat chahiye Habibganj area mein", Intent: ask }
+      - { Message_ID: MSG-2026-0006, At: "2026-08-06T09:20:00+05:30", Lead_ID: LD-2026-0140, Lead_Name: Priya Singh, Phone: "+918765432109", Broker: Meena Verma, Channel: WhatsApp, Direction: In, Sender: Client, Text: "Self-use ke liye. Loan facility milegi?", Intent: ask }
+      - { Message_ID: MSG-2026-0007, At: "2026-08-06T10:15:00+05:30", Lead_ID: LD-2026-0139, Lead_Name: Ankit Sharma, Phone: "+917654321098", Broker: "", Channel: WhatsApp, Direction: In, Sender: Client, Text: "Site visit kab hoga?", Intent: book_visit }
+      - { Message_ID: MSG-2026-0008, At: "2026-08-06T07:30:00+05:30", Lead_ID: LD-2026-0136, Lead_Name: Mohit Jain, Phone: "+914321098765", Broker: Sunil Sharma, Channel: WhatsApp, Direction: In, Sender: Client, Text: "Thoda baad mein call karna", Intent: later }
+
+  - name: followups
+    id: { column: Followup_ID, prefix: "FU-" }
+    created: Created_At
+    title: Lead_Name
+    owner: Broker
+    due: { column: Next_Due_At, closed: "Status in [Replied, Completed, Stopped]" }
+    contact: { phone: Phone, whatsapp: Phone }
+    status: { column: Status, values: [Pending, Replied, Completed, Stopped] }
+    columns: [Followup_ID, Created_At, Lead_ID, Lead_Name, Phone, Broker, Reason, Property_Interest, Count, Max_Count, Next_Due_At, Last_Sent_At, Status]
+    fields:
+      Phone:     { type: phone }
+      Reason:    { one_of: [Busy, No reply, Asked for later] }
+      Count:     { type: number, integer: true, min: 0, max: 10 }
+      Max_Count: { type: number, integer: true, min: 1, max: 10 }
+    seed: 6
+    examples:
+      - { Followup_ID: FU-2026-0023, Created_At: "2026-08-06T07:31:00+05:30", Lead_ID: LD-2026-0136, Lead_Name: Mohit Jain, Phone: "+914321098765", Broker: Sunil Sharma, Reason: Asked for later, Property_Interest: 4BHK Premium Villa, Count: 0, Max_Count: 3, Next_Due_At: "2026-08-07T11:00:00+05:30", Status: Pending }
+      - { Followup_ID: FU-2026-0022, Created_At: "2026-08-05T15:50:00+05:30", Lead_ID: "", Lead_Name: Kavita Rao, Phone: "+919900011122", Broker: Rajesh Kumar, Reason: Busy, Property_Interest: 3BHK Luxury Apartment, Count: 1, Max_Count: 3, Next_Due_At: "2026-08-06T15:50:00+05:30", Last_Sent_At: "2026-08-05T16:00:00+05:30", Status: Pending }
+      - { Followup_ID: FU-2026-0019, Created_At: "2026-08-01T10:00:00+05:30", Lead_ID: "", Lead_Name: Sunita Rao, Phone: "+919900033344", Broker: Meena Verma, Reason: No reply, Property_Interest: "", Count: 3, Max_Count: 3, Next_Due_At: "2026-08-04T10:00:00+05:30", Last_Sent_At: "2026-08-04T10:00:00+05:30", Status: Completed }
+
+  - name: calls
+    id: { column: Call_ID, prefix: "CALL-" }
+    created: Started_At
+    title: Caller_Name
+    owner: Broker
+    contact: { phone: Phone }
+    status: { column: Outcome, values: [Booking, Follow-up, Not interested, Info only] }
+    columns: [Call_ID, Started_At, Lead_ID, Caller_Name, Phone, Broker, VAPI_Call_ID, Duration_Sec, Outcome, Property_Interest, Transcript, Recording_URL]
+    fields:
+      VAPI_Call_ID: { unique: true }
+      Duration_Sec: { type: number, integer: true, min: 0 }
+    seed: 0
+    examples:
+      - { Call_ID: CALL-2026-0089, Started_At: "2026-08-06T11:24:00+05:30", Lead_ID: LD-2026-0136, Caller_Name: Mohit Jain, Phone: "+914321098765", Broker: Sunil Sharma, VAPI_Call_ID: vapi-sample-0089, Duration_Sec: 262, Outcome: Booking, Property_Interest: 4BHK Premium Villa, Transcript: "AI (Priya): Namaste! Prime Realty se Priya bol rahi hoon. Aap kisi property mein interested hain?\nMohit Jain: Haan, mujhe 4BHK villa chahiye, budget 1.3 crore ke around.\nAI (Priya): Chinar Park mein premium 4BHK villa — ₹1.2 Cr to ₹1.5 Cr. Site visit karein?\nMohit Jain: Haan zaroor, Sunday ko available hoon.\nAI (Priya): Sunday 11 AM confirm. Broker Sunil Sharma aapko guide karenge." }
+      - { Call_ID: CALL-2026-0088, Started_At: "2026-08-05T15:45:00+05:30", Lead_ID: "", Caller_Name: Kavita Rao, Phone: "+919900011122", Broker: Rajesh Kumar, VAPI_Call_ID: vapi-sample-0088, Duration_Sec: 178, Outcome: Follow-up, Property_Interest: 3BHK Luxury Apartment, Transcript: "AI (Priya): Namaste! Property ke baare mein baat karni hai?\nKavita Rao: Haan, 3BHK flat chahiye Kolar Road area mein.\nAI (Priya): ₹65L–75L range mein ek excellent 3BHK hai. Kya aap abhi baat kar sakti hain?\nKavita Rao: Abhi thodi busy hoon, kal call karna.\nAI (Priya): Bilkul ji! Kal follow-up karenge." }
+      - { Call_ID: CALL-2026-0087, Started_At: "2026-08-05T10:12:00+05:30", Lead_ID: LD-2026-0138, Caller_Name: Deepak Mishra, Phone: "+916543210987", Broker: Meena Verma, VAPI_Call_ID: vapi-sample-0087, Duration_Sec: 361, Outcome: Booking, Property_Interest: Plot 200 sq.yd, Transcript: "AI (Priya): Namaste! Aap plot khareedna chahte hain?\nDeepak Mishra: Haan, Misrod area mein 200 gaj plot chahiye, investment ke liye.\nAI (Priya): Misrod mein corner plot — ₹18L–22L. RERA approved. Site visit karein?\nDeepak Mishra: Haan main interested hoon.\nAI (Priya): August 7, 11 AM confirm. Broker Meena Verma call karengi." }
+
+  - name: agent_runs
+    id: { column: Run_ID, prefix: "RUN-" }
+    created: At
+    title: Flow
+    status: { column: Status, values: [OK, Failed, Skipped] }
+    columns: [Run_ID, At, Flow, Trigger, Lead_ID, Status, Duration_Ms, Detail]
+    fields:
+      Flow:        { one_of: [WA_AGENT, VOICE_AGENT, FOLLOWUP_RUN] }
+      Duration_Ms: { type: number, integer: true, min: 0 }
+    seed: 6
+    examples:
+      - { Run_ID: RUN-2026-0101, At: "2026-08-06T10:00:00+05:30", Flow: FOLLOWUP_RUN, Trigger: Schedule every 4 h, Lead_ID: "", Status: OK, Duration_Ms: 3800, Detail: "5 due, 5 sent, 0 completed" }
+      - { Run_ID: RUN-2026-0100, At: "2026-08-06T09:16:00+05:30", Flow: WA_AGENT, Trigger: WhatsApp message, Lead_ID: LD-2026-0140, Status: Failed, Duration_Ms: 0, Detail: "WhatsApp send refused: outside the 24-hour window" }
+
+  - name: agent_settings
+    id: { column: Key, prefix: "" }
+    title: Key
+    columns: [Key, Value, Note]
+    seed: 0
+    examples:
+      - { Key: agent_name, Value: Priya, Note: "The name the AI agent introduces itself with" }
+      - { Key: agent_language, Value: "Same as the client (Hinglish / Hindi / English)", Note: "Reply language rule" }
+      - { Key: followup_delay_hours, Value: "24", Note: "First follow-up after this many hours without a reply" }
+      - { Key: followup_interval_hours, Value: "24", Note: "Gap between follow-ups 1, 2 and 3" }
+      - { Key: followup_max, Value: "3", Note: "Follow-ups per lead before it is marked Completed" }
+      - { Key: office_phone, Value: "+91 755 400 0000", Note: "Printed in the last follow-up" }
+      - { Key: rera_number, Value: MP/2022/RERA/001234, Note: "Company RERA registration" }
+      - { Key: city, Value: "Bhopal, Madhya Pradesh", Note: "" }
+
+header:
+  covers: [R14]
+  search:
+    - { label: Leads, entity: leads, columns: [Lead_ID, Name, Phone, Area_Pref], title: Name, subtitle: [Stage, Broker], link: /leads, page: leads }
+    - { label: Properties, entity: properties, columns: [Property_ID, Name, Area_Name], title: Name, subtitle: [Status], link: /inventory, page: inventory }
+  notifications:
+    - { metric: unassigned, title: Name, subtitle: [Area_Pref], date: Created_At, link: /leads, page: leads }
+    - { metric: visits_today, title: Client_Name, subtitle: [Property_Name, Broker], date: Visit_At, link: /site-visits, page: visits }
+    - { metric: failed_runs, title: Flow, subtitle: [Detail], date: At, link: /ai-agents, page: ai_agents }
+
+flows:
+  - name: MESSAGES
+    covers: [R11]
+    trigger: { tool: webhook, name: catch_webhook, auth: none }
+    writes: [messages]
+    actions:
+      # Channel job (method/ai-pipeline.md § Split rules): the office's own reply, inside the 24-hour window, sent from the Inbox composer.
+      - { name: reply, via: custom, covers: [R11], model: none,
+          payload: { Lead_ID: string, Lead_Name: string, Phone: string, Broker: string, Text: string },
+          sends: { tool: whatsapp, to: Phone, message: "{{Text}}" },
+          result: { sent: boolean },
+          rules: ["Only inside the 24-hour window after the client's last message; outside it the composer is disabled and says why"],
+          typical_seconds: 4, credits: 7, runs_per_month: 200,
+          effect: { insert: messages, fill: { Channel: WhatsApp, Direction: Out, Sender: Office, At: now }, map: { Lead_ID: Lead_ID, Lead_Name: Lead_Name, Phone: Phone, Broker: Broker, Text: Text } } }
+
+  - name: VISITS
+    covers: [R13]
+    trigger: { tool: webhook, name: catch_webhook, auth: none }
+    writes: [bookings, leads]
+    actions:
+      # The office books a visit from the lead: the booking row, the lead's stage, and the broker's WhatsApp alert (approved template).
+      - { name: schedule_visit, covers: [R13, R7], model: none,
+          payload: { Lead_ID: string, Name: string, Phone: string, Broker: string, Property_Name: string, Visit_At: string, Budget_INR: number, Source: string, Notes: string, To: string },
+          sends: { tool: whatsapp, to: { entity: brokers, match: Broker, by: Name, column: Phone },
+                   template: { name: broker_visit_alert, variables: { client: "{{Name}}", phone: "{{Phone}}", property: "{{Property_Name}}", budget: "{{Budget_INR}}", visit: "{{Visit_At}}" } } },
+          result: { Booking_ID: string },
+          typical_seconds: 5, credits: 7, runs_per_month: 20,
+          effect: { insert: bookings, fill: { Status: Scheduled, Created_By: Office },
+                    map: { Lead_ID: Lead_ID, Name: Client_Name, Phone: Client_Phone, Broker: Broker, Property_Name: Property_Name, Visit_At: Visit_At, Budget_INR: Budget_INR, Source: Source, Notes: Notes },
+                    also: { patch: leads, map: { Broker: Broker, Property_Name: Property_Interest }, only: [Broker, Property_Interest], fill: { Stage: Visit Scheduled } } } }
+      # The client's confirmation of a booked visit (approved template — the client may be outside the 24-hour window).
+      - { name: confirm_client, covers: [R13], model: none,
+          payload: { Booking_ID: string, Client_Name: string, Client_Phone: string, Property_Name: string, Visit_At: string, Broker: string },
+          sends: { tool: whatsapp, to: Client_Phone,
+                   template: { name: visit_confirmation, variables: { name: "{{Client_Name}}", property: "{{Property_Name}}", visit: "{{Visit_At}}", broker: "{{Broker}}" } } },
+          result: { sent: boolean },
+          typical_seconds: 4, credits: 7, runs_per_month: 38,
+          effect: { patch: bookings, fill: { Notes: "Confirmation sent to client on WhatsApp" } } }
+
+pages:
+  - id: overview
+    covers: [R14, R15]
+    kind: overview
+    route: /
+    label: Dashboard
+    icon: LayoutDashboard
+    desc: Leads, site visits and bookings this month — and what needs a person now
+    greeting: Here is the desk today.
+    roles: [admin]
+    quick_links: false
+    kpis: [ { metric: leads_month }, { metric: visits_open }, { metric: booked_month }, { metric: pipeline_value } ]
+    queues:
+      - { metric: unassigned,   entity: leads,    action: assign_broker, action_label: Assign, sub: Area_Pref, link: /leads }
+      - { metric: visits_today, entity: bookings, action: visit_outcome, action_label: Visit outcome, sub: Property_Name, link: /site-visits }
+      - { metric: followups_due, entity: followups, action: stop_followup, action_label: Stop, sub: Reason, link: /follow-ups }
+    charts:
+      - { id: lead-funnel, type: funnel, entity: leads, title: Lead funnel, where: "Stage!=Lost" }
+      - { id: lead-sources, type: breakdown, entity: leads, title: Lead sources, group: Source }
+    recent: { title: Recent bookings, entity: bookings, date: Created_At, limit: 8, link: /site-visits,
+              columns: [ { key: Client_Name, type: text, sub: Property_Name, grow: true }, { key: Budget_INR, type: money }, { key: Source, type: tag }, { key: Broker, type: text }, { key: Visit_At, type: date }, { key: Status, type: badge } ] }
+    modals:
+      - { id: assign_broker, kind: edit, title: Assign broker, entity: leads, direct: patch, summary: [Name, Area_Pref], submit: Assign, success: "Broker assigned",
+          fields: [ { key: Broker, label: Broker, type: select, options_from: brokers.Name, required: true } ] }
+      - { id: visit_outcome, kind: status, title: Visit outcome, entity: bookings, direct: patch, summary: [Client_Name, Property_Name], submit: Save outcome,
+          fields: [ { key: Status, label: Outcome, type: select, options: [Visited, Booked, Cancelled], required: true }, { key: Deal_Value_INR, label: Deal value (₹), type: number, show_when: "Status=Booked", required_when: "Status=Booked" }, { key: Commission_INR, label: Commission (₹), type: number, show_when: "Status=Booked" }, { key: Cancel_Reason, label: Reason, type: textarea, rows: 2, show_when: "Status=Cancelled", required_when: "Status=Cancelled" } ] }
+      - { id: stop_followup, kind: status, title: Stop follow-ups, entity: followups, direct: patch, summary: [Lead_Name, Count], submit: Stop, context: { Status: Stopped }, fields: [] }
+
+  - id: inbox
+    covers: [R11, R21]
+    route: /inbox
+    label: Inbox
+    icon: MessagesSquare
+    desc: Every WhatsApp and call conversation — take over from the AI agent and reply by hand
+    subtitle: Read what the AI agent said, take over when a client needs a person, hand back when done
+    entity: messages
+    roles: [admin]
+    badge: { entity: leads, where: "AI_Mode=Off and Stage not in [Booked, Lost]" }
+    blocks:
+      - { type: custom, name: ConversationInbox, covers: [R11, R21] }
+    modals:
+      - { id: take_over, kind: status, title: Take over from the AI agent, entity: leads, direct: patch, summary: [Name, Phone], submit: Take over, context: { AI_Mode: Off }, fields: [] }
+      - { id: hand_back, kind: status, title: Hand back to the AI agent, entity: leads, direct: patch, summary: [Name, Phone], submit: Hand back, context: { AI_Mode: On }, fields: [] }
+    actions: { header: [], row: [take_over, hand_back] }
+
+  - id: leads
+    covers: [R20, R1]
+    route: /leads
+    label: Leads
+    icon: Users
+    desc: Every lead from WhatsApp and calls, from first message to booked or lost
+    subtitle: Every enquiry the AI agent captured, by stage
+    entity: leads
+    roles: [admin]
+    blocks:
+      - type: kpis
+        kpis: [ { metric: leads_month }, { metric: unassigned }, { metric: taken_over } ]
+      - type: table
+        segments: { column: Stage, all: All leads }
+        period: { column: Created_At, presets: [7d, 30d, month, all], default: all }
+        views: [kanban, table]
+        columns: [ { key: Name, type: text, sub: Phone }, { key: Stage, type: badge }, { key: Next_Followup_At, header: Follow-up, type: due }, { key: Budget_Max_INR, header: Budget up to, type: money }, { key: Broker, type: owner }, { key: Area_Pref, header: Area, type: tag }, { key: Source, type: tag }, { key: AI_Mode, header: AI, type: badge }, { key: Lead_ID, type: id, priority: low } ]
+        search: [Name, Phone, Lead_ID, Area_Pref, Property_Interest]
+        filters: [Source, Broker, Property_Type]
+        bulk: [assign_broker]
+        assign: assign_broker
+        kanban: { column: Stage, stages: [New, Engaged, Visit Scheduled, Booked, Lost], locked: [Lost], title: Name, subtitle: Area_Pref, meta: [Budget_Max_INR, Next_Followup_At], avatar: Broker, move: { direct: patch } }
+        drawer:
+          title_column: Name
+          tabs:
+            - { label: Lead, sections: [ { type: tiles, title: Requirement, columns: [Purpose, Property_Type, BHK, Area_Pref, Budget_Min_INR, Budget_Max_INR] }, { type: callout, column: Summary, title: What the AI agent understood, tone: neutral }, { type: fields, columns: [Phone, Source, Broker, AI_Mode, Lang, Property_Interest, Lost_Reason], hide_empty: true } ] }
+            - { label: Conversation, sections: [ { type: timeline, entity: messages, by: Lead_ID, date: At, actor: Sender, body: Text, limit: 20 } ] }
+            - { label: Visits, sections: [ { type: related, entity: bookings, by: Lead_ID, title: Site visits, columns: [Property_Name, Visit_At, Broker, Status] } ] }
+        empty: { title: No leads yet, reason: "Leads arrive on their own when a client messages the WhatsApp number or calls.", action: add_lead }
+        actions: { header: [add_lead], row: [book_visit, assign_broker, lose] }
+    modals:
+      - { id: add_lead, kind: create, title: Add lead, direct: insert, submit: Add lead, success: "Lead added", context: { Stage: New, AI_Mode: Off }, primary: true,
+          fields: [ { key: Name, label: Client name, type: text, required: true }, { key: Phone, label: Mobile, type: text, required: true, placeholder: "+91…" }, { key: Source, label: Source, type: select, options: [Walk-in, Referral, WhatsApp, Voice], default: Walk-in, required: true },
+                    { key: Property_Type, label: Looking for, type: select, options: [Residential, Commercial, Plot] }, { key: Area_Pref, label: Area, type: text, placeholder: "e.g. Kolar Road" }, { key: Budget_Max_INR, label: Budget up to (₹), type: number }, { key: Broker, label: Broker, type: select, options_from: brokers.Name } ] }
+      - { id: book_visit, covers: [R13], kind: custom, title: Book site visit, flow: VISITS, action: schedule_visit, submit: Book visit, pending: "Booking…", success: "Visit booked — broker alerted on WhatsApp", summary: [Name, Phone], pass: [Lead_ID, Name, Phone, Source],
+          fields: [ { key: Property_Name, label: Property, type: select, options_from: properties.Name, required: true }, { key: Broker, label: Broker, type: select, options_from: brokers.Name, required: true }, { key: Visit_At, label: Visit date and time, type: date, required: true }, { key: Budget_INR, label: Budget (₹), type: number }, { key: Notes, label: Notes for the broker, type: textarea, rows: 2 } ] }
+      - { id: assign_broker, kind: edit, title: Assign broker, direct: patch, summary: [Name, Area_Pref], submit: Assign, success: "Broker assigned",
+          fields: [ { key: Broker, label: Broker, type: select, options_from: brokers.Name, required: true } ] }
+      - { id: lose, kind: status, title: Mark lost, direct: patch, summary: [Name, Stage], submit: Mark lost, context: { Stage: Lost },
+          fields: [ { key: Lost_Reason, label: Reason, type: textarea, rows: 2, required: true } ] }
+
+  - id: visits
+    covers: [R13, R16]
+    route: /site-visits
+    label: Site visits
+    icon: CalendarCheck
+    desc: Every site visit and booking — confirm, record the outcome, see the broker log
+    subtitle: Visits the AI agent and the office booked, and how each one ended
+    entity: bookings
+    roles: [admin]
+    blocks:
+      - type: kpis
+        kpis: [ { metric: visits_today }, { metric: visits_open }, { metric: booked_month }, { metric: pipeline_value } ]
+      - type: table
+        segments: { column: Status, all: All visits }
+        period: { column: Visit_At, presets: [today, 7d, 30d, month, all], default: all }
+        views: [table, kanban]
+        columns: [ { key: Client_Name, type: text, sub: Client_Phone }, { key: Property_Name, header: Property, type: text }, { key: Visit_At, header: Visit, type: due }, { key: Broker, type: owner }, { key: Budget_INR, header: Budget, type: money }, { key: Status, type: badge }, { key: Created_By, header: Booked by, type: tag }, { key: Commission_INR, header: Commission, type: money, priority: low }, { key: Booking_ID, type: id, priority: low } ]
+        search: [Client_Name, Client_Phone, Property_Name, Booking_ID]
+        filters: [Broker, Source, Created_By]
+        kanban: { column: Status, stages: [Scheduled, Visited, Booked, Cancelled], locked: [Booked, Cancelled], title: Client_Name, subtitle: Property_Name, meta: [Visit_At, Budget_INR], avatar: Broker, move: { direct: patch } }
+        actions: { header: [], row: [visit_outcome, reassign, confirm_client] }
+    modals:
+      - { id: visit_outcome, kind: status, title: Visit outcome, direct: patch, summary: [Client_Name, Property_Name], submit: Save outcome,
+          fields: [ { key: Status, label: Outcome, type: select, options: [Visited, Booked, Cancelled, Scheduled], required: true }, { key: Deal_Value_INR, label: Deal value (₹), type: number, show_when: "Status=Booked", required_when: "Status=Booked" }, { key: Commission_INR, label: Commission (₹), type: number, show_when: "Status=Booked" }, { key: Cancel_Reason, label: Reason, type: textarea, rows: 2, show_when: "Status=Cancelled", required_when: "Status=Cancelled" } ] }
+      - { id: reassign, kind: edit, title: Reschedule or reassign, direct: patch, summary: [Client_Name, Visit_At], submit: Save,
+          fields: [ { key: Visit_At, label: Visit date and time, type: date }, { key: Broker, label: Broker, type: select, options_from: brokers.Name } ] }
+      - { id: confirm_client, covers: [R13], kind: status, title: Send confirmation to client, flow: VISITS, action: confirm_client, submit: Send on WhatsApp, pending: "Sending…", success: "Confirmation sent",
+          summary: [Client_Name, Property_Name, Visit_At], intro: "Sends the approved visit-confirmation template to the client's WhatsApp.", pass: [Booking_ID, Client_Name, Client_Phone, Property_Name, Visit_At, Broker], fields: [] }
+
+  - id: inventory
+    covers: [R12, R14, R4]
+    route: /inventory
+    label: Inventory
+    icon: Building2
+    desc: Every property the AI agent may offer — only Available ones are offered
+    subtitle: The AI agent offers only what is Available here, the moment you change it
+    entity: properties
+    roles: [admin]
+    blocks:
+      - type: kpis
+        kpis: [ { metric: active_props }, { label: Sold, formula: "count where Status=Sold", icon: BadgeCheck }, { label: Under negotiation, formula: "count where Status=Under Negotiation", icon: Handshake } ]
+      - type: table
+        segments: { column: Status, all: All properties }
+        views: [cards, table]
+        columns: [ { key: Name, type: text, sub: Area_Name }, { key: Type, type: tag }, { key: Config, type: tag }, { key: Price_Min_INR, header: From, type: money }, { key: Price_Max_INR, header: To, type: money }, { key: Size, type: number }, { key: Size_Unit, header: Unit, type: text }, { key: Status, type: badge }, { key: Property_ID, type: id, priority: low } ]
+        card: { title: Name, subtitle: [Area_Name, Config], badge: Status, fields: [ { key: Price_Min_INR, label: From, icon: IndianRupee }, { key: Price_Max_INR, label: To, icon: IndianRupee }, { key: Size, label: Size, icon: Ruler }, { key: Possession, label: Possession, icon: CalendarDays } ], tags: { column: Tags }, actions: [edit_property, set_status] }
+        search: [Name, Area_Name, Property_ID, Tags]
+        filters: [Type, Area_Name, Config]
+        actions: { header: [add_property], row: [edit_property, set_status] }
+    modals:
+      - { id: add_property, covers: [R12], kind: create, title: Add property, direct: insert, size: lg, submit: Add property, success: "Property added", context: { City: Bhopal }, primary: true,
+          fields: [ { key: Name, label: Property name, type: text, required: true, placeholder: "e.g. 3BHK Luxury Apartment" }, { key: Type, label: Type, type: select, options: [Residential, Commercial, Plot], required: true },
+                    { key: Area_Name, label: Location, type: text, required: true, placeholder: "Area, e.g. Kolar Road" }, { key: Config, label: BHK / config, type: select, options: [1 BHK, 2 BHK, 3 BHK, 4 BHK, Shop, Office, Plot, Land], required: true },
+                    { key: Price_Min_INR, label: Price from (₹), type: number, required: true }, { key: Price_Max_INR, label: Price to (₹), type: number, required: true },
+                    { key: Size, label: Area, type: number }, { key: Size_Unit, label: Unit, type: select, options: [sq.ft, sq.yd, acre], default: sq.ft },
+                    { key: Floor, label: Floor, type: text }, { key: Parking, label: Parking, type: text }, { key: Possession, label: Possession, type: text, placeholder: "Ready to Move / Dec 2026" },
+                    { key: Status, label: Status, type: select, options: [Available, Under Negotiation, Booked, Sold], default: Available, required: true }, { key: Tags, label: Tags (comma separated), type: text, placeholder: "Ready to Move, Gated Society, RERA Approved" } ] }
+      - { id: edit_property, kind: edit, title: Edit property, direct: patch, summary: [Name, Area_Name], submit: Save,
+          fields: [ { key: Price_Min_INR, label: Price from (₹), type: number }, { key: Price_Max_INR, label: Price to (₹), type: number }, { key: Possession, label: Possession, type: text }, { key: Tags, label: Tags, type: text } ] }
+      - { id: set_status, kind: status, title: Change status, direct: patch, summary: [Name, Status], submit: Save,
+          fields: [ { key: Status, label: Status, type: select, options_status: true, required: true } ] }
+
+  - id: followups
+    covers: [R9, R22, R8]
+    route: /follow-ups
+    label: Follow-ups
+    icon: BellRing
+    desc: Clients who said busy or "baad mein" — the agent nudges them up to three times
+    subtitle: The AI agent sends up to three nudges; stop or reschedule any of them here
+    entity: followups
+    roles: [admin]
+    blocks:
+      - type: kpis
+        kpis: [ { metric: followups_due }, { label: Pending, formula: "count where Status=Pending", icon: Clock }, { label: Replied, formula: "count where Status=Replied", icon: MessageSquareReply, tone: ok } ]
+      - type: table
+        segments: { column: Status, all: All follow-ups }
+        columns: [ { key: Lead_Name, header: Client, type: text, sub: Phone }, { key: Reason, type: tag }, { key: Next_Due_At, header: Next nudge, type: due }, { key: Count, header: Sent, type: number }, { key: Max_Count, header: Of, type: number }, { key: Broker, type: owner }, { key: Status, type: badge }, { key: Property_Interest, header: Interested in, type: truncate, priority: low } ]
+        search: [Lead_Name, Phone, Property_Interest]
+        filters: [Reason, Broker]
+        actions: { header: [], row: [reschedule_followup, stop_followup] }
+    modals:
+      - { id: reschedule_followup, kind: edit, title: Reschedule nudge, direct: patch, summary: [Lead_Name, Next_Due_At], submit: Save,
+          fields: [ { key: Next_Due_At, label: Next nudge, type: date, required: true } ] }
+      - { id: stop_followup, kind: status, title: Stop follow-ups, direct: patch, summary: [Lead_Name, Count], submit: Stop, context: { Status: Stopped }, fields: [] }
+
+  - id: calls
+    covers: [R10]
+    route: /calls
+    label: Call recordings
+    icon: PhoneCall
+    desc: Calls the AI voice agent answered, with transcript and outcome
+    subtitle: Every call the AI voice agent answered — transcript, outcome and recording
+    entity: calls
+    roles: [admin]
+    read_only: "Calls are written by the voice agent; the office reads them and acts on the lead"
+    blocks:
+      - type: kpis
+        kpis: [ { label: Calls this month, formula: "count where Started_At in month", icon: PhoneCall }, { label: Converted to visit, formula: "count where Outcome=Booking", icon: CalendarCheck, tone: ok }, { label: Avg duration (s), formula: "avg Duration_Sec", icon: Timer } ]
+      - type: table
+        segments: { column: Outcome, all: All calls }
+        period: { column: Started_At, presets: [7d, 30d, month, all], default: 30d }
+        columns: [ { key: Caller_Name, header: Caller, type: text, sub: Phone }, { key: Started_At, header: When, type: date, time: true }, { key: Duration_Sec, header: Seconds, type: number }, { key: Outcome, type: badge }, { key: Property_Interest, header: Interested in, type: text }, { key: Broker, type: owner }, { key: Call_ID, type: id, priority: low } ]
+        search: [Caller_Name, Phone, Call_ID]
+        drawer: { title_column: Caller_Name, sections: [ { type: tiles, columns: [Started_At, Duration_Sec, Outcome, Broker] }, { type: callout, column: Transcript, title: Transcript, tone: neutral }, { type: fields, columns: [Recording_URL, Lead_ID, VAPI_Call_ID], hide_empty: true } ] }
+
+  - id: brokers
+    covers: [R16, R6]
+    route: /brokers
+    label: Brokers
+    icon: UserCog
+    desc: The brokers the AI agent assigns visits to, by specialty, with their visits and closures
+    subtitle: Who gets which visit — residential, commercial or plots — and how each is closing
+    entity: brokers
+    roles: [admin]
+    blocks:
+      - type: charts
+        charts:
+          - { id: broker-visits, type: breakdown, entity: bookings, title: Visits by broker, group: Broker, series: Status, series_order: [Scheduled, Visited, Booked, Cancelled] }
+          - { id: broker-revenue, type: breakdown, entity: bookings, title: Booked value by broker, group: Broker, sum: Deal_Value_INR, where: "Status=Booked", style: bar }
+      - type: table
+        views: [cards, table]
+        columns: [ { key: Name, type: text, sub: Phone }, { key: Specialty, type: tag }, { key: Experience_Years, header: Years, type: number }, { key: Status, type: badge }, { key: Broker_ID, type: id, priority: low } ]
+        card: { title: Name, subtitle: [Specialty], badge: Status, fields: [ { key: Phone, label: Phone, icon: Phone }, { key: Experience_Years, label: Years, icon: Award } ], actions: [edit_broker] }
+        drawer: { title_column: Name, sections: [ { type: fields, columns: [Phone, Email, Specialty, Experience_Years, Joined_On] }, { type: related, entity: bookings, by: Broker, title: Assignment log, columns: [Client_Name, Property_Name, Visit_At, Status, Commission_INR] } ] }
+        search: [Name, Phone]
+        actions: { header: [add_broker], row: [edit_broker] }
+    modals:
+      - { id: add_broker, kind: create, title: Add broker, direct: insert, submit: Add broker, success: "Broker added — create their sign-in in Users & roles", context: { Status: Active },
+          fields: [ { key: Name, label: Name, type: text, required: true, help: "Must match the person's name in Users & roles so they see their own visits" }, { key: Phone, label: Mobile, type: text, required: true }, { key: Email, label: Email, type: text }, { key: Specialty, label: Specialty, type: select, options: [Residential, Commercial, Plots], required: true }, { key: Experience_Years, label: Years of experience, type: number } ] }
+      - { id: edit_broker, kind: edit, title: Edit broker, direct: patch, summary: [Name, Specialty], submit: Save,
+          fields: [ { key: Phone, label: Mobile, type: text }, { key: Specialty, label: Specialty, type: select, options: [Residential, Commercial, Plots] }, { key: Status, label: Status, type: select, options: [Active, Inactive] } ] }
+
+  - id: ai_agents
+    covers: [R17]
+    route: /ai-agents
+    label: AI agents
+    icon: Bot
+    group: Setup
+    desc: The WhatsApp agent, the voice agent and the follow-up scheduler — recent runs and failures
+    subtitle: What the three agents did, and every run that failed
+    entity: agent_runs
+    roles: [admin]
+    read_only: "Runs are written by the agents themselves; a failure is fixed in Studio or Settings, not here"
+    blocks:
+      - type: kpis
+        kpis: [ { metric: failed_runs }, { label: Runs this week, formula: "count where At in last 7 days", icon: Activity }, { label: Follow-up runs, formula: "count where Flow=FOLLOWUP_RUN", icon: BellRing } ]
+      - type: table
+        segments: { column: Status, all: All runs }
+        period: { column: At, presets: [today, 7d, 30d, all], default: 7d }
+        columns: [ { key: Flow, type: tag }, { key: At, type: date, time: true }, { key: Trigger, type: text }, { key: Status, type: badge }, { key: Detail, type: truncate }, { key: Lead_ID, type: id, priority: low } ]
+        filters: [Flow]
+
+  - id: agent_settings
+    covers: [R19]
+    route: /agent-settings
+    label: Agent settings
+    icon: SlidersHorizontal
+    group: Setup
+    desc: The agent's name and language, follow-up timing and company details
+    subtitle: Changes reach the agents on their next run
+    entity: agent_settings
+    roles: [admin]
+    blocks:
+      - type: table
+        columns: [ { key: Key, header: Setting, type: text, sub: Note }, { key: Value, type: text } ]
+        actions: { header: [], row: [edit_setting] }
+    modals:
+      - { id: edit_setting, kind: edit, title: Change setting, direct: patch, summary: [Key, Note], submit: Save, fields: [ { key: Value, label: Value, type: text, required: true } ] }
+
+  # ── Broker's own pages (scoped server-side to Broker = the signed-in person) ──────────────────────────
+  - id: my_visits
+    covers: [R18]
+    route: /my-visits
+    label: My site visits
+    icon: CalendarCheck
+    desc: The visits assigned to me — call the client and record the outcome
+    subtitle: Your visits, today first
+    entity: bookings
+    roles: [broker]
+    blocks:
+      - type: queue
+        entity: bookings
+        where: "Broker={{user}}"
+        log: my_visit_outcome
+        row_actions: [my_visit_outcome]
+        groups:
+          - { metric: visits_today, action: my_visit_outcome, action_label: Visit outcome }
+          - { label: Coming up, entity: bookings, where: "Broker={{user}} and Status=Scheduled and Visit_At>today", action: my_visit_outcome, action_label: Visit outcome }
+          - { label: Visited — not closed, entity: bookings, where: "Broker={{user}} and Status=Visited", action: my_visit_outcome, action_label: Visit outcome }
+    actions: { header: [], row: [my_visit_outcome] }
+    modals:
+      - { id: my_visit_outcome, kind: status, title: Visit outcome, direct: patch, summary: [Client_Name, Property_Name], submit: Save outcome, primary: true,
+          fields: [ { key: Status, label: Outcome, type: select, options: [Visited, Booked, Cancelled], required: true }, { key: Deal_Value_INR, label: Deal value (₹), type: number, show_when: "Status=Booked", required_when: "Status=Booked" }, { key: Cancel_Reason, label: Reason, type: textarea, rows: 2, show_when: "Status=Cancelled", required_when: "Status=Cancelled" }, { key: Notes, label: Notes, type: textarea, rows: 2 } ] }
+
+  - id: my_leads
+    covers: [R18]
+    route: /my-leads
+    label: My leads
+    icon: Users
+    desc: Leads assigned to me, with the full conversation
+    subtitle: Your leads and what each client said to the AI agent
+    entity: leads
+    roles: [broker]
+    read_only: "A broker reads their leads and the conversation; stage and assignment are the office's"
+    blocks:
+      - type: table
+        where: "Broker={{user}}"
+        segments: { column: Stage, all: All my leads }
+        columns: [ { key: Name, type: text, sub: Phone }, { key: Stage, type: badge }, { key: Next_Followup_At, header: Follow-up, type: due }, { key: Budget_Max_INR, header: Budget up to, type: money }, { key: Area_Pref, header: Area, type: tag }, { key: Property_Interest, header: Interested in, type: truncate } ]
+        search: [Name, Phone]
+        drawer:
+          title_column: Name
+          tabs:
+            - { label: Lead, sections: [ { type: tiles, title: Requirement, columns: [Purpose, Property_Type, BHK, Area_Pref, Budget_Min_INR, Budget_Max_INR] }, { type: callout, column: Summary, title: What the AI agent understood, tone: neutral } ] }
+            - { label: Conversation, sections: [ { type: timeline, entity: messages, by: Lead_ID, date: At, actor: Sender, body: Text, limit: 20 } ] }
+
+  - id: my_followups
+    covers: [R18]
+    route: /my-follow-ups
+    label: My follow-ups
+    icon: BellRing
+    desc: My clients who asked to be contacted later
+    subtitle: Your clients the agent is nudging
+    entity: followups
+    roles: [broker]
+    read_only: "The agent sends the nudges; a broker sees who is waiting"
+    blocks:
+      - type: table
+        where: "Broker={{user}}"
+        segments: { column: Status, all: All }
+        columns: [ { key: Lead_Name, header: Client, type: text, sub: Phone }, { key: Reason, type: tag }, { key: Next_Due_At, header: Next nudge, type: due }, { key: Count, header: Sent, type: number }, { key: Status, type: badge } ]
+
+  - id: settings
+    kind: settings
+    route: /settings
+    label: Settings
+    icon: Settings
+    desc: Profile and password
+    roles: [admin, broker]
+
+rules_in_code:
+  - { text: "PR - WA_AGENT (custom flow, step 6): a WhatsApp message from a phone not in leads creates the lead (Source WhatsApp, Stage New, AI_Mode On); a known phone attaches to its lead — dedupe on Phone in CODE", covers: [R1] }
+  - { text: "PR - WA_AGENT: one llm-ai call writes the reply in the client's language (Hinglish / Hindi / English, from agent_settings.agent_language) and returns {intent, fields, reply}; the parse step keeps only those keys", covers: [R2, R3] }
+  - { text: "PR - WA_AGENT: matching inventory is chosen in CODE before the AI call — properties with Status=Available whose Type, Config, Area_Name and price range fit the lead's stated area, budget, BHK and type; the prompt sees only those rows", covers: [R4] }
+  - { text: "PR - WA_AGENT / VOICE_AGENT: intent book_visit with a property and a date inserts a bookings row (Created_By AI agent, Status Scheduled) and moves the lead to Visit Scheduled", covers: [R5, R20] }
+  - { text: "Broker assignment (CODE): property Type Residential → Residential specialist, Commercial → Commercial, Plot → Plots; among Active brokers of that specialty, the one with fewest Scheduled visits; tie → alphabetical", covers: [R6] }
+  - { text: "PR - WA_AGENT / VOICE_AGENT: a new booking sends the approved template broker_visit_alert to the assigned broker's phone (client name, phone, property, budget, visit time)", covers: [R7] }
+  - { text: "PR - WA_AGENT / VOICE_AGENT: intent later (busy, baad mein, call later) inserts a followups row: Count 0, Max_Count = agent_settings.followup_max, Next_Due_At = now + followup_delay_hours", covers: [R8] }
+  - { text: "PR - FOLLOWUP_RUN (schedule, every 4 h): each Pending follow-up with Next_Due_At ≤ now and Count < Max_Count gets template followup_1 / followup_2 / followup_3 by Count (CODE), then Count + 1, Last_Sent_At = now, Next_Due_At += followup_interval_hours; Count = Max_Count → Completed. No AI", covers: [R9] }
+  - { text: "PR - VOICE_AGENT (custom flow, step 6): each VAPI caller turn gets one llm-ai answer returned synchronously to VAPI; the end-of-call report writes the calls row (transcript, duration, outcome, recording URL)", covers: [R10] }
+  - { text: "PR - WA_AGENT: a lead with AI_Mode=Off gets no AI reply — the message is stored and shown in the Inbox only", covers: [R21] }
+  - { text: "PR - WA_AGENT: any inbound message from a lead with a Pending follow-up sets that follow-up to Replied (no further nudges)", covers: [R22] }
+  - { text: "PR - WA_AGENT / VOICE_AGENT / FOLLOWUP_RUN write an agent_runs row for every failed run and FOLLOWUP_RUN one row per run (counts sent / completed)", covers: [R17] }
+  - { text: "Every flow write goes through /api/data with the shared INBOUND_TOKEN; messages and followups carry the lead's Broker so a broker's scope covers them", covers: [R18] }
+  - { text: "Lead budget, property price and deal values are stored in rupees; ₹ L / Cr is display only (D10)", covers: [R14] }
+
+not_in_v1:
+  - { text: "Meta Ads lead-form capture — needs a Graph API fetch of the lead's details (X1)" }
+  - { text: "Telegram broker alerts — brokers are alerted on WhatsApp (X2)" }
+  - { text: "Google Sheets as the record — replaced by this database (X3)" }
+  - { text: "Sending property photos, videos and virtual tours on WhatsApp — needs media hosting (X4)" }
+  - { text: "Excel export — the kernel CSV export covers inventory and calls (X5)" }
+  - { text: "API keys and tokens on any screen — connections live in Pucho Studio (X6)" }

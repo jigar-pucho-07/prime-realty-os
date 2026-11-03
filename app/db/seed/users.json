@@ -1,0 +1,16 @@
+[
+  {
+    "id": "USR-ADMIN",
+    "email": "admin@primerealty.pucho.ai",
+    "name": "Arvind Kumar",
+    "role": "admin",
+    "password": "admin12345"
+  },
+  {
+    "id": "USR-BROKER",
+    "email": "rajesh@primerealty.pucho.ai",
+    "name": "Rajesh Kumar",
+    "role": "broker",
+    "password": "broker12345"
+  }
+]

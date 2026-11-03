@@ -1,0 +1,5 @@
+# 02 — TRD · Prime Realty OS
+Stack: Next.js (App Router — Server Components read, Server Actions write, Route Handlers for flows and health) + PostgreSQL (the system of record; one database per client, single-tenant) + Tailwind, the Pucho kernel · Automation: Pucho AI Studio workflows called server-side from the environment (`WEBHOOK_<FLOW>`), writing back through `/api/data/<entity>` with `INBOUND_TOKEN`; Studio reads reports through the read-only `studio_reader` role · Deploy: CP Portal builds `deploy/deploy-ready.zip` (source + Dockerfile, from the kit's `build_deploy.py`; never `npm run package`), one process on one port · Standard: `docs/fullstack-build-standard.md` (§19 security baseline ships with the first release: argon2id + `__Host-` sessions, authorization in every action, Zod, headers, no public DB port, verified DB TLS, field encryption where declared).
+Entities (tables): leads, properties, brokers, bookings, messages, followups, calls, agent_runs, agent_settings, audit_log
+Flows: MESSAGES, VISITS
+Roles: admin, broker

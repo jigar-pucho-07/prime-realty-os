@@ -1,0 +1,9 @@
+Key,Value,Note
+agent_name,Priya,The name the AI agent introduces itself with
+agent_language,Same as the client (Hinglish / Hindi / English),Reply language rule
+followup_delay_hours,24,First follow-up after this many hours without a reply
+followup_interval_hours,24,"Gap between follow-ups 1, 2 and 3"
+followup_max,3,Follow-ups per lead before it is marked Completed
+office_phone,+91 755 400 0000,Printed in the last follow-up
+rera_number,MP/2022/RERA/001234,Company RERA registration
+city,"Bhopal, Madhya Pradesh",

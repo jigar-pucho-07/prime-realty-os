@@ -1,0 +1,10 @@
+Property_ID,Created_At,Name,Type,Config,Area_Name,City,Price_Min_INR,Price_Max_INR,Size,Size_Unit,Floor,Parking,Possession,Status,Tags
+PR-001,2026-08-14T10:00:00+05:30,3BHK Luxury Apartment,Residential,3 BHK,Kolar Road,Bhopal,6500000,7500000,1450,sq.ft,5th,2 Covered,Ready to Move,Available,"Ready to Move, Gated Society, RERA Approved"
+PR-002,2026-08-14T10:00:00+05:30,2BHK Modern Flat,Residential,2 BHK,Habibganj,Bhopal,4200000,4800000,1050,sq.ft,3rd,1 Covered,Dec 2025,Available,RERA Approved
+PR-003,2026-08-14T10:00:00+05:30,4BHK Premium Villa,Residential,4 BHK,Chinar Park,Bhopal,12000000,15000000,3200,sq.ft,G+1,3 Covered,Ready to Move,Booked,"Private Pool, Smart Home, Luxury"
+PR-004,2026-08-14T10:00:00+05:30,Commercial Shop Space,Commercial,Shop,DB Mall Road,Bhopal,2500000,3500000,450,sq.ft,Ground,,Ready,Available,"Main Road, High Footfall"
+PR-005,2026-08-14T10:00:00+05:30,Plot 200 sq.yd,Plot,Plot,Misrod,Bhopal,1800000,2200000,200,sq.yd,,,Ready,Available,"RERA Approved, Corner Plot"
+PR-006,2026-08-14T10:00:00+05:30,3BHK Builder Floor,Residential,3 BHK,Arera Colony,Bhopal,5500000,6200000,1300,sq.ft,2nd,1 Covered,Ready to Move,Sold,
+PR-007,2026-08-14T10:00:00+05:30,2BHK Studio Apartment,Residential,2 BHK,MP Nagar,Bhopal,3500000,4200000,890,sq.ft,7th,1 Covered,Ready to Move,Available,"High Rise, Metro Nearby"
+PR-008,2026-08-14T10:00:00+05:30,Office Space 1000 sq.ft,Commercial,Office,Hoshangabad Road,Bhopal,5500000,6500000,1000,sq.ft,4th,5 Open,Ready,Available,"Corporate Zone, RERA Approved"
+PR-009,2026-08-14T10:00:00+05:30,Agricultural Land 2 Acre,Plot,Land,Ratibad,Bhopal,3000000,3800000,2,acre,,,Ready,Available,"Investment Zone, Highway Access"

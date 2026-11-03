@@ -1,0 +1,4 @@
+Broker_ID,Name,Phone,Email,Specialty,Experience_Years,Status,Joined_On
+BR-001,Rajesh Kumar,+919800111001,rajesh@primerealty.example,Residential,8,Active,2018-05-15
+BR-002,Sunil Sharma,+919800122002,sunil@primerealty.example,Commercial,6,Active,2020-07-29
+BR-003,Meena Verma,+919800133003,meena@primerealty.example,Plots,5,Active,2021-02-23
