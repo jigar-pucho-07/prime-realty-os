@@ -1,0 +1,29 @@
+{
+  "flow": "VISITS",
+  "covers": [
+    "R13"
+  ],
+  "connections": "portable",
+  "fire_and_forget": false,
+  "allow_pieces": [
+    "http",
+    "pucho-whatsapp",
+    "webhook"
+  ],
+  "allow_names": [
+    "catch_webhook",
+    "return_response",
+    "send_request",
+    "send_template_message"
+  ],
+  "require_capabilities": [
+    "receive_VISITS=webhook:trigger",
+    "respond_VISITS=webhook:respond",
+    "persist_VISITS_schedule_visit=http:write",
+    "also_VISITS_schedule_visit=step_schedule_visit_also_update:http:write",
+    "dispatch_VISITS_schedule_visit=pucho-whatsapp:write",
+    "persist_VISITS_confirm_client=http:write",
+    "dispatch_VISITS_confirm_client=pucho-whatsapp:write"
+  ],
+  "unverified_outputs": []
+}

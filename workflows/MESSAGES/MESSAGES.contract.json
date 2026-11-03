@@ -1,0 +1,26 @@
+{
+  "flow": "MESSAGES",
+  "covers": [
+    "R11"
+  ],
+  "connections": "portable",
+  "fire_and_forget": false,
+  "allow_pieces": [
+    "http",
+    "pucho-whatsapp",
+    "webhook"
+  ],
+  "allow_names": [
+    "catch_webhook",
+    "return_response",
+    "send_request",
+    "send_text_message"
+  ],
+  "require_capabilities": [
+    "receive_MESSAGES=webhook:trigger",
+    "respond_MESSAGES=webhook:respond",
+    "persist_MESSAGES_reply=http:write",
+    "dispatch_MESSAGES_reply=pucho-whatsapp:write"
+  ],
+  "unverified_outputs": []
+}
