@@ -103,8 +103,10 @@ CREATE TABLE IF NOT EXISTS "leads" (
   "last_message" text,
   "last_message_at" timestamptz,
   "next_followup_at" timestamptz,
+  "followup_reason" text,
   "lost_reason" text,
   "summary" text,
+  "history" text,
   _seq bigserial
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "leads_phone_uq" ON "leads" ("phone");
@@ -278,8 +280,10 @@ ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "lang" text;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "last_message" text;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "last_message_at" timestamptz;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "next_followup_at" timestamptz;
+ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "followup_reason" text;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "lost_reason" text;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "summary" text;
+ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "history" text;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS _seq bigserial;
 DO $$ DECLARE r record; BEGIN
   FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"leads"'::regclass AND left(conname, 17) = 'leads_source_v49_' AND conname <> 'leads_source_v49_249c3be1' LOOP
@@ -322,6 +326,12 @@ DO $$ DECLARE r record; BEGIN
     EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'leads', r.conname); END LOOP;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"leads"'::regclass AND conname = 'leads_lang_v49_8e9db479') THEN
     ALTER TABLE "leads" ADD CONSTRAINT "leads_lang_v49_8e9db479" CHECK (("lang" IN ('Hinglish', 'Hindi', 'English') OR "lang" = '')) NOT VALID; END IF;
+END $$;
+DO $$ DECLARE r record; BEGIN
+  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"leads"'::regclass AND left(conname, 26) = 'leads_followup_reason_v49_' AND conname <> 'leads_followup_reason_v49_f3ff391f' LOOP
+    EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'leads', r.conname); END LOOP;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"leads"'::regclass AND conname = 'leads_followup_reason_v49_f3ff391f') THEN
+    ALTER TABLE "leads" ADD CONSTRAINT "leads_followup_reason_v49_f3ff391f" CHECK (("followup_reason" IN ('Busy', 'No reply', 'Asked for later') OR "followup_reason" = '')) NOT VALID; END IF;
 END $$;
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "created_at" timestamptz;
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "name" text;

@@ -23,8 +23,10 @@ PostgreSQL, one table per entity (`app/db/schema.sql`, idempotent — apply, the
 | Last_Message | text |
 | Last_Message_At | timestamptz |
 | Next_Followup_At | timestamptz |
+| Followup_Reason | text |
 | Lost_Reason | text |
 | Summary | text |
+| History | text |
 
 id: Lead_ID (LD-…) · status: Stage ['New', 'Engaged', 'Visit Scheduled', 'Booked', 'Lost']
 

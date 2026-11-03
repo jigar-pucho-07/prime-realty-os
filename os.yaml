@@ -96,8 +96,11 @@ entities:
     due: { column: Next_Followup_At, closed: "Stage in [Booked, Lost]" }
     contact: { phone: Phone, whatsapp: Phone }
     status: { column: Stage, values: [New, Engaged, Visit Scheduled, Booked, Lost] }
-    columns: [Lead_ID, Created_At, Name, Phone, Source, Stage, Purpose, Property_Type, BHK, Area_Pref, Budget_Min_INR, Budget_Max_INR, Property_Interest, Broker, AI_Mode, Lang, Last_Message, Last_Message_At, Next_Followup_At, Lost_Reason, Summary]
+    columns: [Lead_ID, Created_At, Name, Phone, Source, Stage, Purpose, Property_Type, BHK, Area_Pref, Budget_Min_INR, Budget_Max_INR, Property_Interest, Broker, AI_Mode, Lang, Last_Message, Last_Message_At, Next_Followup_At, Followup_Reason, Lost_Reason, Summary, History]
+    # Last_Message / Last_Message_At = the CLIENT's last message (the 24-hour window, follow-up replies). History = the last 20 turns,
+    # kept by the agent flows so a turn never reads the whole messages table. Followup_Reason set by the agent on "baad mein".
     fields:
+      Followup_Reason: { one_of: [Busy, No reply, Asked for later] }
       Phone:          { type: phone, unique: true }
       Source:         { one_of: [WhatsApp, Voice, Walk-in, Referral] }
       Purpose:        { one_of: [Buy, Rent, Invest] }
@@ -277,8 +280,6 @@ entities:
     columns: [Key, Value, Note]
     seed: 0
     examples:
-      - { Key: agent_name, Value: Priya, Note: "The name the AI agent introduces itself with" }
-      - { Key: agent_language, Value: "Same as the client (Hinglish / Hindi / English)", Note: "Reply language rule" }
       - { Key: followup_delay_hours, Value: "24", Note: "First follow-up after this many hours without a reply" }
       - { Key: followup_interval_hours, Value: "24", Note: "Gap between follow-ups 1, 2 and 3" }
       - { Key: followup_max, Value: "3", Note: "Follow-ups per lead before it is marked Completed" }
@@ -678,15 +679,15 @@ rules_in_code:
   - { text: "PR - WA_AGENT (custom flow, step 6): a WhatsApp message from a phone not in leads creates the lead (Source WhatsApp, Stage New, AI_Mode On); a known phone attaches to its lead — dedupe on Phone in CODE", covers: [R1] }
   - { text: "PR - WA_AGENT: one llm-ai call writes the reply in the client's language (Hinglish / Hindi / English, from agent_settings.agent_language) and returns {intent, fields, reply}; the parse step keeps only those keys", covers: [R2, R3] }
   - { text: "PR - WA_AGENT: matching inventory is chosen in CODE before the AI call — properties with Status=Available whose Type, Config, Area_Name and price range fit the lead's stated area, budget, BHK and type; the prompt sees only those rows", covers: [R4] }
-  - { text: "PR - WA_AGENT / VOICE_AGENT: intent book_visit with a property and a date inserts a bookings row (Created_By AI agent, Status Scheduled) and moves the lead to Visit Scheduled", covers: [R5, R20] }
-  - { text: "Broker assignment (CODE): property Type Residential → Residential specialist, Commercial → Commercial, Plot → Plots; among Active brokers of that specialty, the one with fewest Scheduled visits; tie → alphabetical", covers: [R6] }
-  - { text: "PR - WA_AGENT / VOICE_AGENT: a new booking sends the approved template broker_visit_alert to the assigned broker's phone (client name, phone, property, budget, visit time)", covers: [R7] }
-  - { text: "PR - WA_AGENT / VOICE_AGENT: intent later (busy, baad mein, call later) inserts a followups row: Count 0, Max_Count = agent_settings.followup_max, Next_Due_At = now + followup_delay_hours", covers: [R8] }
+  - { text: "PR - WA_AGENT / VOICE_AGENT: intent book_visit with a property and a date calls PR - VISITS.schedule_visit (the same action the office uses): a bookings row with Status Scheduled, the lead moved to Visit Scheduled, the broker alerted", covers: [R5, R20] }
+  - { text: "Broker assignment (CODE, app/src/custom/agent): the lead's broker if one is set; else property Type Residential → Residential specialist, Commercial → Commercial, Plot → Plots, among Active brokers; several of one specialty → rotated by the lead number; none → any Active broker", covers: [R6] }
+  - { text: "PR - VISITS.schedule_visit sends the approved template broker_visit_alert to the assigned broker's phone (client name, phone, property, budget, visit time) — for AI and office bookings alike", covers: [R7] }
+  - { text: "PR - WA_AGENT / VOICE_AGENT: intent later (busy, baad mein, call later) sets the lead's Followup_Reason and Next_Followup_At; PR - FOLLOWUP_RUN opens the followups row (Count 0, Max_Count = agent_settings.followup_max, Next_Due_At = client's last message + followup_delay_hours)", covers: [R8] }
   - { text: "PR - FOLLOWUP_RUN (schedule, every 4 h): each Pending follow-up with Next_Due_At ≤ now and Count < Max_Count gets template followup_1 / followup_2 / followup_3 by Count (CODE), then Count + 1, Last_Sent_At = now, Next_Due_At += followup_interval_hours; Count = Max_Count → Completed. No AI", covers: [R9] }
   - { text: "PR - VOICE_AGENT (custom flow, step 6): each VAPI caller turn gets one llm-ai answer returned synchronously to VAPI; the end-of-call report writes the calls row (transcript, duration, outcome, recording URL)", covers: [R10] }
   - { text: "PR - WA_AGENT: a lead with AI_Mode=Off gets no AI reply — the message is stored and shown in the Inbox only", covers: [R21] }
-  - { text: "PR - WA_AGENT: any inbound message from a lead with a Pending follow-up sets that follow-up to Replied (no further nudges)", covers: [R22] }
-  - { text: "PR - WA_AGENT / VOICE_AGENT / FOLLOWUP_RUN write an agent_runs row for every failed run and FOLLOWUP_RUN one row per run (counts sent / completed)", covers: [R17] }
+  - { text: "PR - FOLLOWUP_RUN: a Pending follow-up whose lead wrote after the last nudge (Last_Message_At > Last_Sent_At, else > Created_At) becomes Replied — no further nudges", covers: [R22] }
+  - { text: "PR - FOLLOWUP_RUN writes one agent_runs row per run (due, sent, replied, completed). WA_AGENT / VOICE_AGENT runs and their failures are in Studio's run history (no step left in their 14-step budget for a log write) ⚑ known gap", covers: [R17] }
   - { text: "Every flow write goes through /api/data with the shared INBOUND_TOKEN; messages and followups carry the lead's Broker so a broker's scope covers them", covers: [R18] }
   - { text: "Lead budget, property price and deal values are stored in rupees; ₹ L / Cr is display only (D10)", covers: [R14] }
 
@@ -697,3 +698,4 @@ not_in_v1:
   - { text: "Sending property photos, videos and virtual tours on WhatsApp — needs media hosting (X4)" }
   - { text: "Excel export — the kernel CSV export covers inventory and calls (X5)" }
   - { text: "API keys and tokens on any screen — connections live in Pucho Studio (X6)" }
+  - { text: "Changing the agent's name (Priya) and reply-language rule from the app — they are constants of PR - WA_AGENT / VOICE_AGENT, changed in Studio; a fourth read would push the booking path past the 14-step budget. Follow-up timing and company details stay in Agent settings" }

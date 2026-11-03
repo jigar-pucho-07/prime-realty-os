@@ -22,8 +22,10 @@
         "Last_Message",
         "Last_Message_At",
         "Next_Followup_At",
+        "Followup_Reason",
         "Lost_Reason",
-        "Summary"
+        "Summary",
+        "History"
       ],
       "types": {
         "Lead_ID": "text",
@@ -45,8 +47,10 @@
         "Last_Message": "text",
         "Last_Message_At": "timestamptz",
         "Next_Followup_At": "timestamptz",
+        "Followup_Reason": "text",
         "Lost_Reason": "text",
-        "Summary": "text"
+        "Summary": "text",
+        "History": "text"
       },
       "unique": [
         "Phone"
