@@ -1,0 +1,756 @@
+{
+  "created": "1700000000000",
+  "updated": "1700000000000",
+  "name": "PR - FOLLOWUP_RUN",
+  "description": "Prime Realty OS · FOLLOWUP_RUN: every 4 h — open follow-ups for clients who said later, stop on a reply, send template nudges 1–3, complete after the last. No AI.",
+  "tags": [],
+  "pieces": [
+    "@puchoaistudio/tool-schedule",
+    "@puchoaistudio/tool-http",
+    "@puchoaistudio/tool-pucho-whatsapp",
+    "@puchoaistudio/tool-webhook"
+  ],
+  "template": {
+    "displayName": "PR - FOLLOWUP_RUN",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "Every 4 hours (IST)",
+      "type": "TOOL_TRIGGER",
+      "settings": {
+        "pieceName": "@puchoaistudio/tool-schedule",
+        "pieceVersion": "^2.0.0",
+        "input": {
+          "cronExpression": "0 */4 * * *",
+          "timezone": "Asia/Kolkata"
+        },
+        "sampleData": {},
+        "propertySettings": {
+          "cronExpression": {
+            "type": "MANUAL"
+          },
+          "timezone": {
+            "type": "MANUAL"
+          }
+        },
+        "triggerName": "cron_expression"
+      },
+      "nextAction": {
+        "name": "step_followups",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "input": {
+            "method": "GET",
+            "url": "SET_IN_STUDIO_APP_URL/api/data/followups",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer SET_IN_STUDIO_INBOUND_TOKEN",
+              "X-Flow": "FOLLOWUP_RUN"
+            },
+            "queryParams": {
+              "select": "*"
+            },
+            "authType": "NONE"
+          },
+          "pieceName": "@puchoaistudio/tool-http",
+          "actionName": "send_request",
+          "sampleData": {},
+          "pieceVersion": "^2.0.0",
+          "propertySettings": {
+            "method": {
+              "type": "MANUAL"
+            },
+            "url": {
+              "type": "MANUAL"
+            },
+            "headers": {
+              "type": "MANUAL",
+              "schema": {}
+            },
+            "queryParams": {
+              "type": "MANUAL",
+              "schema": {}
+            },
+            "authType": {
+              "type": "MANUAL"
+            }
+          },
+          "errorHandlingOptions": {
+            "retryOnFailure": {
+              "value": false
+            },
+            "continueOnFailure": {
+              "value": false
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_leads",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "method": "GET",
+              "url": "SET_IN_STUDIO_APP_URL/api/data/leads",
+              "headers": {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer SET_IN_STUDIO_INBOUND_TOKEN",
+                "X-Flow": "FOLLOWUP_RUN"
+              },
+              "queryParams": {
+                "select": "*"
+              },
+              "authType": "NONE"
+            },
+            "pieceName": "@puchoaistudio/tool-http",
+            "actionName": "send_request",
+            "sampleData": {},
+            "pieceVersion": "^2.0.0",
+            "propertySettings": {
+              "method": {
+                "type": "MANUAL"
+              },
+              "url": {
+                "type": "MANUAL"
+              },
+              "headers": {
+                "type": "MANUAL",
+                "schema": {}
+              },
+              "queryParams": {
+                "type": "MANUAL",
+                "schema": {}
+              },
+              "authType": {
+                "type": "MANUAL"
+              }
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "nextAction": {
+            "name": "step_settings",
+            "skip": false,
+            "type": "PIECE",
+            "valid": true,
+            "settings": {
+              "input": {
+                "method": "GET",
+                "url": "SET_IN_STUDIO_APP_URL/api/data/agent_settings",
+                "headers": {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer SET_IN_STUDIO_INBOUND_TOKEN",
+                  "X-Flow": "FOLLOWUP_RUN"
+                },
+                "queryParams": {
+                  "select": "*"
+                },
+                "authType": "NONE"
+              },
+              "pieceName": "@puchoaistudio/tool-http",
+              "actionName": "send_request",
+              "sampleData": {},
+              "pieceVersion": "^2.0.0",
+              "propertySettings": {
+                "method": {
+                  "type": "MANUAL"
+                },
+                "url": {
+                  "type": "MANUAL"
+                },
+                "headers": {
+                  "type": "MANUAL",
+                  "schema": {}
+                },
+                "queryParams": {
+                  "type": "MANUAL",
+                  "schema": {}
+                },
+                "authType": {
+                  "type": "MANUAL"
+                }
+              },
+              "errorHandlingOptions": {
+                "retryOnFailure": {
+                  "value": false
+                },
+                "continueOnFailure": {
+                  "value": false
+                }
+              }
+            },
+            "nextAction": {
+              "name": "step_plan",
+              "skip": false,
+              "type": "CODE",
+              "valid": true,
+              "settings": {
+                "input": {
+                  "followups": "{{step_followups['body']}}",
+                  "leads": "{{step_leads['body']}}",
+                  "setting_rows": "{{step_settings['body']}}"
+                },
+                "sampleData": {},
+                "sourceCode": {
+                  "code": "// @ts-nocheck\n// lib: app/src/custom/agent/agent.js (bundled by flowkit.inline_lib; tests/agent.test.mjs)\nconst OPEN_STAGES = [\n\t\"New\",\n\t\"Engaged\",\n\t\"Visit Scheduled\"\n];\nconst digitsOf = (v) => String(v ?? \"\").replace(/\\D/g, \"\");\n/** Any Indian mobile form → \"+91XXXXXXXXXX\" (10 digits after 91); other lengths → \"+<digits>\"; nothing → \"\". */\nfunction e164(v) {\n\tconst d = digitsOf(v);\n\tif (!d) return \"\";\n\tif (d.length === 10) return \"+91\" + d;\n\tif (d.length === 11 && d[0] === \"0\") return \"+91\" + d.slice(1);\n\treturn \"+\" + d;\n}\nconst rows = (r) => Array.isArray(r) ? r : Array.isArray(r?.rows) ? r.rows : [];\nconst num = (v) => {\n\tconst n = Number(String(v ?? \"\").replace(/[^\\d.]/g, \"\"));\n\treturn Number.isFinite(n) ? n : 0;\n};\n/** \"LD-2026-0141\" style: the next free number in this year for the prefix, from the rows already stored. */\nfunction nextId(prefix, list, idCol, now) {\n\tconst year = new Date(now).getUTCFullYear();\n\tconst re = /* @__PURE__ */ new RegExp(\"^\" + prefix.replace(/[-]/g, \"\\\\-\") + year + \"-(\\\\d+)$\");\n\tconst max = rows(list).reduce((m, r) => {\n\t\tconst x = String(r[idCol] ?? \"\").match(re);\n\t\treturn x ? Math.max(m, Number(x[1])) : m;\n\t}, 0);\n\treturn `${prefix}${year}-${String(max + 1).padStart(4, \"0\")}`;\n}\nfunction settingsOf(list) {\n\tconst kv = Object.fromEntries(rows(list).map((r) => [r.Key, r.Value]));\n\treturn {\n\t\tdelay: num(kv.followup_delay_hours) || 24,\n\t\tinterval: num(kv.followup_interval_hours) || 24,\n\t\tmax: Math.min(10, num(kv.followup_max) || 3),\n\t\toffice_phone: kv.office_phone || \"\"\n\t};\n}\n/** One run: open follow-ups for leads that asked for later, mark replies (R22), send the due nudges (R9), complete the last. */\nfunction followupPlan({ followupList, leadList, settingList, now }) {\n\tconst S = settingsOf(settingList);\n\tconst t = new Date(now).getTime();\n\tconst iso = new Date(now).toISOString();\n\tconst leadsById = new Map(rows(leadList).map((l) => [l.Lead_ID, l]));\n\tconst fus = rows(followupList).slice();\n\tconst ops = [];\n\tconst count = {\n\t\topened: 0,\n\t\treplied: 0,\n\t\tsent: 0,\n\t\tcompleted: 0\n\t};\n\tconst time = (v) => {\n\t\tconst x = Date.parse(v);\n\t\treturn Number.isFinite(x) ? x : 0;\n\t};\n\tfor (const l of rows(leadList)) {\n\t\tif (!l.Followup_Reason || !OPEN_STAGES.includes(l.Stage)) continue;\n\t\tconst asked = time(l.Last_Message_At);\n\t\tif (fus.some((f) => f.Lead_ID === l.Lead_ID && (f.Status === \"Pending\" || time(f.Created_At) >= asked))) continue;\n\t\tconst row = {\n\t\t\tFollowup_ID: nextId(\"FU-\", fus, \"Followup_ID\", now),\n\t\t\tCreated_At: iso,\n\t\t\tLead_ID: l.Lead_ID,\n\t\t\tLead_Name: l.Name,\n\t\t\tPhone: l.Phone,\n\t\t\tBroker: l.Broker || \"\",\n\t\t\tReason: l.Followup_Reason,\n\t\t\tProperty_Interest: l.Property_Interest || \"\",\n\t\t\tCount: 0,\n\t\t\tMax_Count: S.max,\n\t\t\tNext_Due_At: new Date((asked || t) + S.delay * 36e5).toISOString(),\n\t\t\tLast_Sent_At: \"\",\n\t\t\tStatus: \"Pending\"\n\t\t};\n\t\tfus.push(row);\n\t\tops.push({\n\t\t\top: \"open\",\n\t\t\trow\n\t\t});\n\t\tcount.opened++;\n\t}\n\tfor (const f of fus) {\n\t\tif (f.Status !== \"Pending\") continue;\n\t\tconst l = leadsById.get(f.Lead_ID) || {};\n\t\tif (time(l.Last_Message_At) > (time(f.Last_Sent_At) || time(f.Created_At))) {\n\t\t\tops.push({\n\t\t\t\top: \"status\",\n\t\t\t\tid: f.Followup_ID,\n\t\t\t\tStatus: \"Replied\"\n\t\t\t});\n\t\t\tcount.replied++;\n\t\t\tcontinue;\n\t\t}\n\t\tif (!OPEN_STAGES.includes(l.Stage || \"Engaged\")) {\n\t\t\tops.push({\n\t\t\t\top: \"status\",\n\t\t\t\tid: f.Followup_ID,\n\t\t\t\tStatus: \"Stopped\"\n\t\t\t});\n\t\t\tcontinue;\n\t\t}\n\t\tconst n = num(f.Count);\n\t\tif (n >= num(f.Max_Count || S.max)) {\n\t\t\tops.push({\n\t\t\t\top: \"status\",\n\t\t\t\tid: f.Followup_ID,\n\t\t\t\tStatus: \"Completed\"\n\t\t\t});\n\t\t\tcount.completed++;\n\t\t\tcontinue;\n\t\t}\n\t\tif (time(f.Next_Due_At) > t) continue;\n\t\tconst next = n + 1;\n\t\tconst done = next >= num(f.Max_Count || S.max);\n\t\tops.push({\n\t\t\top: \"send\",\n\t\t\tid: f.Followup_ID,\n\t\t\tto: e164(f.Phone),\n\t\t\ttemplate: `followup_${Math.min(next, 3)}`,\n\t\t\tvars: {\n\t\t\t\tname: f.Lead_Name || \"Ji\",\n\t\t\t\tproperty: f.Property_Interest || \"aapke budget ki properties\",\n\t\t\t\toffice_phone: S.office_phone\n\t\t\t},\n\t\t\tpatch: {\n\t\t\t\tCount: next,\n\t\t\t\tLast_Sent_At: iso,\n\t\t\t\tNext_Due_At: new Date(t + S.interval * 36e5).toISOString(),\n\t\t\t\tStatus: done ? \"Completed\" : \"Pending\"\n\t\t\t},\n\t\t\tmessage: {\n\t\t\t\tLead_ID: f.Lead_ID,\n\t\t\t\tLead_Name: f.Lead_Name,\n\t\t\t\tPhone: f.Phone,\n\t\t\t\tBroker: f.Broker || \"\",\n\t\t\t\tChannel: \"WhatsApp\",\n\t\t\t\tDirection: \"Out\",\n\t\t\t\tSender: \"AI agent\",\n\t\t\t\tText: `Follow-up ${next} of ${num(f.Max_Count || S.max)} sent (WhatsApp template followup_${Math.min(next, 3)})`,\n\t\t\t\tIntent: \"other\",\n\t\t\t\tWA_Message_ID: \"\",\n\t\t\t\tAt: iso\n\t\t\t}\n\t\t});\n\t\tcount.sent++;\n\t\tif (done) count.completed++;\n\t}\n\treturn {\n\t\tops,\n\t\tcount,\n\t\trun: {\n\t\t\tFlow: \"FOLLOWUP_RUN\",\n\t\t\tAt: iso,\n\t\t\tTrigger: \"Schedule every 4 h\",\n\t\t\tLead_ID: \"\",\n\t\t\tStatus: \"OK\",\n\t\t\tDuration_Ms: 0,\n\t\t\tDetail: `${count.opened} opened, ${count.sent} sent, ${count.replied} replied, ${count.completed} completed`\n\t\t}\n\t};\n}\n\nconst TEMPLATES = {\n\t\"followup_1\": \"SET_IN_STUDIO_TEMPLATE_ID_FOLLOWUP_1\",\n\t\"followup_2\": \"SET_IN_STUDIO_TEMPLATE_ID_FOLLOWUP_2\",\n\t\"followup_3\": \"SET_IN_STUDIO_TEMPLATE_ID_FOLLOWUP_3\"\n};\n// end lib\nexport const code = async (inputs) => {\n\tconst plan = followupPlan({\n\t\tfollowupList: inputs.followups,\n\t\tleadList: inputs.leads,\n\t\tsettingList: inputs.setting_rows,\n\t\tnow: Date.now()\n\t});\n\tfor (const o of plan.ops) if (o.op === \"send\") o.template_id = TEMPLATES[o.template] || \"\";\n\treturn plan;\n};\n\n",
+                  "packageJson": "{}"
+                },
+                "errorHandlingOptions": {
+                  "retryOnFailure": {
+                    "value": false
+                  },
+                  "continueOnFailure": {
+                    "value": false
+                  }
+                }
+              },
+              "nextAction": {
+                "name": "step_each",
+                "skip": false,
+                "type": "LOOP_ON_ITEMS",
+                "valid": true,
+                "displayName": "For each follow-up action",
+                "settings": {
+                  "items": "{{step_plan['ops']}}",
+                  "sampleData": {}
+                },
+                "firstLoopAction": {
+                  "name": "step_op",
+                  "skip": false,
+                  "type": "ROUTER",
+                  "valid": true,
+                  "children": [
+                    {
+                      "name": "step_open",
+                      "skip": false,
+                      "type": "PIECE",
+                      "valid": true,
+                      "settings": {
+                        "input": {
+                          "method": "POST",
+                          "url": "SET_IN_STUDIO_APP_URL/api/data/followups",
+                          "headers": {
+                            "Content-Type": "application/json",
+                            "Authorization": "Bearer SET_IN_STUDIO_INBOUND_TOKEN",
+                            "X-Flow": "FOLLOWUP_RUN"
+                          },
+                          "queryParams": {},
+                          "authType": "NONE",
+                          "body_type": "json",
+                          "body": {
+                            "data": {
+                              "Followup_ID": "{{step_each['item']['row']['Followup_ID']}}",
+                              "Created_At": "{{step_each['item']['row']['Created_At']}}",
+                              "Lead_ID": "{{step_each['item']['row']['Lead_ID']}}",
+                              "Lead_Name": "{{step_each['item']['row']['Lead_Name']}}",
+                              "Phone": "{{step_each['item']['row']['Phone']}}",
+                              "Broker": "{{step_each['item']['row']['Broker']}}",
+                              "Reason": "{{step_each['item']['row']['Reason']}}",
+                              "Property_Interest": "{{step_each['item']['row']['Property_Interest']}}",
+                              "Count": "{{step_each['item']['row']['Count']}}",
+                              "Max_Count": "{{step_each['item']['row']['Max_Count']}}",
+                              "Next_Due_At": "{{step_each['item']['row']['Next_Due_At']}}",
+                              "Last_Sent_At": "{{step_each['item']['row']['Last_Sent_At']}}",
+                              "Status": "{{step_each['item']['row']['Status']}}"
+                            }
+                          }
+                        },
+                        "pieceName": "@puchoaistudio/tool-http",
+                        "actionName": "send_request",
+                        "sampleData": {},
+                        "pieceVersion": "^2.0.0",
+                        "propertySettings": {
+                          "method": {
+                            "type": "MANUAL"
+                          },
+                          "url": {
+                            "type": "MANUAL"
+                          },
+                          "headers": {
+                            "type": "MANUAL",
+                            "schema": {}
+                          },
+                          "queryParams": {
+                            "type": "MANUAL",
+                            "schema": {}
+                          },
+                          "authType": {
+                            "type": "MANUAL"
+                          },
+                          "body_type": {
+                            "type": "MANUAL"
+                          },
+                          "body": {
+                            "type": "MANUAL",
+                            "schema": {}
+                          }
+                        },
+                        "errorHandlingOptions": {
+                          "retryOnFailure": {
+                            "value": false
+                          },
+                          "continueOnFailure": {
+                            "value": false
+                          }
+                        }
+                      },
+                      "nextAction": null,
+                      "displayName": "Open the follow-up (R8)"
+                    },
+                    {
+                      "name": "step_nudge",
+                      "skip": false,
+                      "type": "PIECE",
+                      "valid": true,
+                      "settings": {
+                        "input": {
+                          "account_id": "SET_IN_STUDIO_WHATSAPP_ACCOUNT_ID",
+                          "to": "{{step_each['item']['to']}}",
+                          "template_id": "{{step_each['item']['template_id']}}",
+                          "template_variables": {
+                            "name": "{{step_each['item']['vars']['name']}}",
+                            "property": "{{step_each['item']['vars']['property']}}",
+                            "office_phone": "{{step_each['item']['vars']['office_phone']}}"
+                          }
+                        },
+                        "pieceName": "@puchoaistudio/tool-pucho-whatsapp",
+                        "actionName": "send_template_message",
+                        "sampleData": {},
+                        "pieceVersion": "^2.1.6",
+                        "propertySettings": {
+                          "account_id": {
+                            "type": "MANUAL"
+                          },
+                          "to": {
+                            "type": "MANUAL"
+                          },
+                          "template_id": {
+                            "type": "MANUAL"
+                          },
+                          "template_variables": {
+                            "type": "MANUAL",
+                            "schema": {}
+                          }
+                        },
+                        "errorHandlingOptions": {
+                          "retryOnFailure": {
+                            "value": false
+                          },
+                          "continueOnFailure": {
+                            "value": false
+                          }
+                        }
+                      },
+                      "nextAction": {
+                        "name": "step_nudge_patch",
+                        "skip": false,
+                        "type": "PIECE",
+                        "valid": true,
+                        "settings": {
+                          "input": {
+                            "method": "PATCH",
+                            "url": "SET_IN_STUDIO_APP_URL/api/data/followups",
+                            "headers": {
+                              "Content-Type": "application/json",
+                              "Authorization": "Bearer SET_IN_STUDIO_INBOUND_TOKEN",
+                              "X-Flow": "FOLLOWUP_RUN"
+                            },
+                            "queryParams": {
+                              "Followup_ID": "eq.{{step_each['item']['id']}}"
+                            },
+                            "authType": "NONE",
+                            "body_type": "json",
+                            "body": {
+                              "data": {
+                                "Count": "{{step_each['item']['patch']['Count']}}",
+                                "Last_Sent_At": "{{step_each['item']['patch']['Last_Sent_At']}}",
+                                "Next_Due_At": "{{step_each['item']['patch']['Next_Due_At']}}",
+                                "Status": "{{step_each['item']['patch']['Status']}}"
+                              }
+                            }
+                          },
+                          "pieceName": "@puchoaistudio/tool-http",
+                          "actionName": "send_request",
+                          "sampleData": {},
+                          "pieceVersion": "^2.0.0",
+                          "propertySettings": {
+                            "method": {
+                              "type": "MANUAL"
+                            },
+                            "url": {
+                              "type": "MANUAL"
+                            },
+                            "headers": {
+                              "type": "MANUAL",
+                              "schema": {}
+                            },
+                            "queryParams": {
+                              "type": "MANUAL",
+                              "schema": {}
+                            },
+                            "authType": {
+                              "type": "MANUAL"
+                            },
+                            "body_type": {
+                              "type": "MANUAL"
+                            },
+                            "body": {
+                              "type": "MANUAL",
+                              "schema": {}
+                            }
+                          },
+                          "errorHandlingOptions": {
+                            "retryOnFailure": {
+                              "value": false
+                            },
+                            "continueOnFailure": {
+                              "value": false
+                            }
+                          }
+                        },
+                        "nextAction": {
+                          "name": "step_nudge_message",
+                          "skip": false,
+                          "type": "PIECE",
+                          "valid": true,
+                          "settings": {
+                            "input": {
+                              "method": "POST",
+                              "url": "SET_IN_STUDIO_APP_URL/api/data/messages",
+                              "headers": {
+                                "Content-Type": "application/json",
+                                "Authorization": "Bearer SET_IN_STUDIO_INBOUND_TOKEN",
+                                "X-Flow": "FOLLOWUP_RUN"
+                              },
+                              "queryParams": {},
+                              "authType": "NONE",
+                              "body_type": "json",
+                              "body": {
+                                "data": {
+                                  "Lead_ID": "{{step_each['item']['message']['Lead_ID']}}",
+                                  "Lead_Name": "{{step_each['item']['message']['Lead_Name']}}",
+                                  "Phone": "{{step_each['item']['message']['Phone']}}",
+                                  "Broker": "{{step_each['item']['message']['Broker']}}",
+                                  "Channel": "{{step_each['item']['message']['Channel']}}",
+                                  "Direction": "{{step_each['item']['message']['Direction']}}",
+                                  "Sender": "{{step_each['item']['message']['Sender']}}",
+                                  "Text": "{{step_each['item']['message']['Text']}}",
+                                  "Intent": "{{step_each['item']['message']['Intent']}}",
+                                  "WA_Message_ID": "{{step_each['item']['message']['WA_Message_ID']}}",
+                                  "At": "{{step_each['item']['message']['At']}}"
+                                }
+                              }
+                            },
+                            "pieceName": "@puchoaistudio/tool-http",
+                            "actionName": "send_request",
+                            "sampleData": {},
+                            "pieceVersion": "^2.0.0",
+                            "propertySettings": {
+                              "method": {
+                                "type": "MANUAL"
+                              },
+                              "url": {
+                                "type": "MANUAL"
+                              },
+                              "headers": {
+                                "type": "MANUAL",
+                                "schema": {}
+                              },
+                              "queryParams": {
+                                "type": "MANUAL",
+                                "schema": {}
+                              },
+                              "authType": {
+                                "type": "MANUAL"
+                              },
+                              "body_type": {
+                                "type": "MANUAL"
+                              },
+                              "body": {
+                                "type": "MANUAL",
+                                "schema": {}
+                              }
+                            },
+                            "errorHandlingOptions": {
+                              "retryOnFailure": {
+                                "value": false
+                              },
+                              "continueOnFailure": {
+                                "value": false
+                              }
+                            }
+                          },
+                          "nextAction": null,
+                          "displayName": "Show the nudge in the Inbox"
+                        },
+                        "displayName": "Count the nudge, set the next one"
+                      },
+                      "displayName": "Send the follow-up template (R9)"
+                    },
+                    {
+                      "name": "step_status",
+                      "skip": false,
+                      "type": "PIECE",
+                      "valid": true,
+                      "settings": {
+                        "input": {
+                          "method": "PATCH",
+                          "url": "SET_IN_STUDIO_APP_URL/api/data/followups",
+                          "headers": {
+                            "Content-Type": "application/json",
+                            "Authorization": "Bearer SET_IN_STUDIO_INBOUND_TOKEN",
+                            "X-Flow": "FOLLOWUP_RUN"
+                          },
+                          "queryParams": {
+                            "Followup_ID": "eq.{{step_each['item']['id']}}"
+                          },
+                          "authType": "NONE",
+                          "body_type": "json",
+                          "body": {
+                            "data": {
+                              "Status": "{{step_each['item']['Status']}}"
+                            }
+                          }
+                        },
+                        "pieceName": "@puchoaistudio/tool-http",
+                        "actionName": "send_request",
+                        "sampleData": {},
+                        "pieceVersion": "^2.0.0",
+                        "propertySettings": {
+                          "method": {
+                            "type": "MANUAL"
+                          },
+                          "url": {
+                            "type": "MANUAL"
+                          },
+                          "headers": {
+                            "type": "MANUAL",
+                            "schema": {}
+                          },
+                          "queryParams": {
+                            "type": "MANUAL",
+                            "schema": {}
+                          },
+                          "authType": {
+                            "type": "MANUAL"
+                          },
+                          "body_type": {
+                            "type": "MANUAL"
+                          },
+                          "body": {
+                            "type": "MANUAL",
+                            "schema": {}
+                          }
+                        },
+                        "errorHandlingOptions": {
+                          "retryOnFailure": {
+                            "value": false
+                          },
+                          "continueOnFailure": {
+                            "value": false
+                          }
+                        }
+                      },
+                      "nextAction": null,
+                      "displayName": "Mark Replied / Completed / Stopped (R22)"
+                    }
+                  ],
+                  "settings": {
+                    "branches": [
+                      {
+                        "branchName": "open",
+                        "branchType": "CONDITION",
+                        "conditions": [
+                          [
+                            {
+                              "operator": "TEXT_EXACTLY_MATCHES",
+                              "firstValue": "{{step_each['item']['op']}}",
+                              "secondValue": "open",
+                              "caseSensitive": false
+                            }
+                          ]
+                        ]
+                      },
+                      {
+                        "branchName": "send",
+                        "branchType": "CONDITION",
+                        "conditions": [
+                          [
+                            {
+                              "operator": "TEXT_EXACTLY_MATCHES",
+                              "firstValue": "{{step_each['item']['op']}}",
+                              "secondValue": "send",
+                              "caseSensitive": false
+                            }
+                          ]
+                        ]
+                      },
+                      {
+                        "branchName": "status",
+                        "branchType": "FALLBACK"
+                      }
+                    ],
+                    "sampleData": {},
+                    "executionType": "EXECUTE_FIRST_MATCH"
+                  },
+                  "nextAction": null,
+                  "displayName": "What to do with this follow-up"
+                },
+                "nextAction": {
+                  "name": "step_run",
+                  "skip": false,
+                  "type": "PIECE",
+                  "valid": true,
+                  "settings": {
+                    "input": {
+                      "method": "POST",
+                      "url": "SET_IN_STUDIO_APP_URL/api/data/agent_runs",
+                      "headers": {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer SET_IN_STUDIO_INBOUND_TOKEN",
+                        "X-Flow": "FOLLOWUP_RUN"
+                      },
+                      "queryParams": {},
+                      "authType": "NONE",
+                      "body_type": "json",
+                      "body": {
+                        "data": {
+                          "At": "{{step_plan['run']['At']}}",
+                          "Flow": "{{step_plan['run']['Flow']}}",
+                          "Trigger": "{{step_plan['run']['Trigger']}}",
+                          "Lead_ID": "{{step_plan['run']['Lead_ID']}}",
+                          "Status": "{{step_plan['run']['Status']}}",
+                          "Duration_Ms": "{{step_plan['run']['Duration_Ms']}}",
+                          "Detail": "{{step_plan['run']['Detail']}}"
+                        }
+                      }
+                    },
+                    "pieceName": "@puchoaistudio/tool-http",
+                    "actionName": "send_request",
+                    "sampleData": {},
+                    "pieceVersion": "^2.0.0",
+                    "propertySettings": {
+                      "method": {
+                        "type": "MANUAL"
+                      },
+                      "url": {
+                        "type": "MANUAL"
+                      },
+                      "headers": {
+                        "type": "MANUAL",
+                        "schema": {}
+                      },
+                      "queryParams": {
+                        "type": "MANUAL",
+                        "schema": {}
+                      },
+                      "authType": {
+                        "type": "MANUAL"
+                      },
+                      "body_type": {
+                        "type": "MANUAL"
+                      },
+                      "body": {
+                        "type": "MANUAL",
+                        "schema": {}
+                      }
+                    },
+                    "errorHandlingOptions": {
+                      "retryOnFailure": {
+                        "value": false
+                      },
+                      "continueOnFailure": {
+                        "value": false
+                      }
+                    }
+                  },
+                  "nextAction": {
+                    "name": "step_done",
+                    "skip": false,
+                    "type": "PIECE",
+                    "valid": true,
+                    "settings": {
+                      "input": {
+                        "fields": {
+                          "body": {
+                            "ok": "true",
+                            "detail": "{{step_plan['run']['Detail']}}"
+                          },
+                          "status": 200,
+                          "headers": {}
+                        },
+                        "respond": "stop",
+                        "responseType": "json"
+                      },
+                      "pieceName": "@puchoaistudio/tool-webhook",
+                      "actionName": "return_response",
+                      "sampleData": {},
+                      "pieceVersion": "^2.0.4",
+                      "propertySettings": {
+                        "fields": {
+                          "type": "MANUAL",
+                          "schema": {
+                            "body": {
+                              "type": "JSON",
+                              "required": true,
+                              "displayName": "JSON Body"
+                            },
+                            "status": {
+                              "type": "NUMBER",
+                              "required": false,
+                              "displayName": "Status",
+                              "defaultValue": 200
+                            },
+                            "headers": {
+                              "type": "OBJECT",
+                              "required": false,
+                              "displayName": "Headers"
+                            }
+                          }
+                        },
+                        "respond": {
+                          "type": "MANUAL"
+                        },
+                        "responseType": {
+                          "type": "MANUAL"
+                        }
+                      },
+                      "errorHandlingOptions": {
+                        "retryOnFailure": {
+                          "value": false
+                        },
+                        "continueOnFailure": {
+                          "value": false
+                        }
+                      }
+                    },
+                    "displayName": "Return: run summary"
+                  },
+                  "displayName": "Log this run on the AI agents page (R17)"
+                }
+              },
+              "displayName": "Plan: open, reply-check, due nudges, completion (CODE, no AI)"
+            },
+            "displayName": "Read agent_settings"
+          },
+          "displayName": "Read leads"
+        },
+        "displayName": "Read followups"
+      }
+    },
+    "valid": true,
+    "agentIds": [],
+    "connectionIds": [],
+    "schemaVersion": "7"
+  },
+  "blogUrl": ""
+}

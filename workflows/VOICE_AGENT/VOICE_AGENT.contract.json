@@ -1,0 +1,32 @@
+{
+  "flow": "VOICE_AGENT",
+  "covers": [
+    "R10",
+    "R5",
+    "R6"
+  ],
+  "connections": "portable",
+  "fire_and_forget": false,
+  "allow_pieces": [
+    "http",
+    "llm-ai",
+    "webhook"
+  ],
+  "allow_names": [
+    "askLlm",
+    "catch_webhook",
+    "return_response",
+    "send_request"
+  ],
+  "require_capabilities": [
+    "receive=webhook:trigger",
+    "respond=webhook:respond",
+    "think=step_ai:llm-ai:read",
+    "create_lead=step_new_lead:http:write",
+    "update_lead=step_old_lead:http:write",
+    "book_visit=step_new_book_visit:http:write",
+    "store_call=step_call:http:write"
+  ],
+  "unverified_outputs": [],
+  "custom": true
+}

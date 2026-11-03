@@ -1,0 +1,142 @@
+{
+  "flows": [
+    {
+      "flow": "FOLLOWUP_RUN",
+      "action": "run",
+      "trace": [
+        "step_followups(http:send_request)",
+        "step_leads(http:send_request)",
+        "step_settings(http:send_request)",
+        "step_plan",
+        "step_each×0",
+        "step_run(http:send_request)",
+        "step_done(webhook:return_response)"
+      ],
+      "failures": [],
+      "responses": 1,
+      "unverified_fakes": []
+    },
+    {
+      "flow": "MESSAGES",
+      "action": "reply",
+      "trace": [
+        "step_constants",
+        "step_router→reply",
+        "step_reply_build",
+        "step_reply_insert(http:send_request)",
+        "step_reply_message",
+        "step_reply_send(pucho-whatsapp:send_text_message)",
+        "step_reply_done(webhook:return_response)"
+      ],
+      "failures": [],
+      "responses": 1,
+      "unverified_fakes": []
+    },
+    {
+      "flow": "VISITS",
+      "action": "confirm_client",
+      "trace": [
+        "step_constants",
+        "step_router→confirm_client",
+        "step_confirm_client_message",
+        "step_confirm_client_send(pucho-whatsapp:send_template_message)",
+        "step_confirm_client_build",
+        "step_confirm_client_update(http:send_request)",
+        "step_confirm_client_done(webhook:return_response)"
+      ],
+      "failures": [],
+      "responses": 1,
+      "unverified_fakes": []
+    },
+    {
+      "flow": "VISITS",
+      "action": "schedule_visit",
+      "trace": [
+        "step_constants",
+        "step_router→schedule_visit",
+        "step_schedule_visit_build",
+        "step_schedule_visit_insert(http:send_request)",
+        "step_schedule_visit_also_build",
+        "step_schedule_visit_also_update(http:send_request)",
+        "step_schedule_visit_message",
+        "step_schedule_visit_send(pucho-whatsapp:send_template_message)",
+        "step_schedule_visit_done(webhook:return_response)"
+      ],
+      "failures": [],
+      "responses": 1,
+      "unverified_fakes": []
+    },
+    {
+      "flow": "VOICE_AGENT",
+      "action": "end",
+      "trace": [
+        "step_receipt→message",
+        "step_leads(http:send_request)",
+        "step_properties(http:send_request)",
+        "step_brokers(http:send_request)",
+        "step_prep",
+        "step_route→end",
+        "step_call(http:send_request)",
+        "step_end_done(webhook:return_response)"
+      ],
+      "failures": [],
+      "responses": 1,
+      "unverified_fakes": []
+    },
+    {
+      "flow": "VOICE_AGENT",
+      "action": "turn",
+      "trace": [
+        "step_receipt→message",
+        "step_leads(http:send_request)",
+        "step_properties(http:send_request)",
+        "step_brokers(http:send_request)",
+        "step_prep",
+        "step_route→turn",
+        "step_ai(llm-ai:askLlm)",
+        "step_finish",
+        "step_lead_route→new_talk",
+        "step_new_lead(http:send_request)",
+        "step_done(webhook:return_response)"
+      ],
+      "failures": [],
+      "responses": 1,
+      "unverified_fakes": []
+    },
+    {
+      "flow": "WA_AGENT",
+      "action": "message",
+      "trace": [
+        "step_receipt→message",
+        "step_leads(http:send_request)",
+        "step_properties(http:send_request)",
+        "step_brokers(http:send_request)",
+        "step_prep",
+        "step_ai(llm-ai:askLlm)",
+        "step_finish",
+        "step_lead_route→new_talk",
+        "step_new_lead(http:send_request)",
+        "step_messages(http:send_request)",
+        "step_send(pucho-whatsapp:send_text_message)",
+        "step_done(webhook:return_response)"
+      ],
+      "failures": [],
+      "responses": 1,
+      "unverified_fakes": []
+    },
+    {
+      "flow": "WA_AGENT",
+      "action": "status",
+      "trace": [
+        "step_receipt→receipt",
+        "step_receipt_done(webhook:return_response)"
+      ],
+      "failures": [],
+      "responses": 1,
+      "unverified_fakes": []
+    }
+  ],
+  "failures": 0,
+  "runs": 8,
+  "untested": []
+}

@@ -1,0 +1,9 @@
+caught  WA_AGENT without step_send (validate exit 1)
+caught  WA_AGENT without step_messages (validate exit 1)
+caught  WA_AGENT without step_ai (validate exit 1)
+caught  WA_AGENT without step_old_book_visit (validate exit 1)
+caught  VOICE_AGENT without step_call (validate exit 1)
+caught  VOICE_AGENT without step_new_lead (validate exit 1)
+caught  FOLLOWUP_RUN without step_run (validate exit 1)
+caught  FOLLOWUP_RUN without step_nudge (validate exit 1)
+mutations: 8/8 caught

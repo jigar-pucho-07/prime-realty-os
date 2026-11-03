@@ -1,0 +1,43 @@
+{
+  "flow": "WA_AGENT",
+  "covers": [
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R20",
+    "R21"
+  ],
+  "connections": "portable",
+  "fire_and_forget": false,
+  "allow_pieces": [
+    "http",
+    "llm-ai",
+    "pucho-whatsapp",
+    "webhook"
+  ],
+  "allow_names": [
+    "askLlm",
+    "catch_webhook",
+    "return_response",
+    "send_request",
+    "send_text_message"
+  ],
+  "require_capabilities": [
+    "receive=webhook:trigger",
+    "respond=webhook:respond",
+    "read_leads=step_leads:http:read",
+    "read_inventory=step_properties:http:read",
+    "think=step_ai:llm-ai:read",
+    "create_lead=step_new_lead:http:write",
+    "update_lead=step_old_lead:http:write",
+    "book_visit=step_old_book_visit:http:write",
+    "store_messages=step_messages:http:write",
+    "office_message=step_office_message:http:write",
+    "reply=step_send:pucho-whatsapp:write"
+  ],
+  "unverified_outputs": [],
+  "custom": true
+}
