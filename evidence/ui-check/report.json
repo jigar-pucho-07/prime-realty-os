@@ -2,7 +2,7 @@
   "os": "Prime Realty OS",
   "status": "pass",
   "viewport": "desktop",
-  "passed": 809,
+  "passed": 853,
   "failed": 0,
   "failures": [],
   "warnings": [
@@ -81,6 +81,9 @@
     "evidence\\ui-check\\drawer-followups-page.png",
     "evidence\\ui-check\\page-calls.png",
     "evidence\\ui-check\\page-brokers.png",
+    "evidence\\ui-check\\filter-brokers-1.png",
+    "evidence\\ui-check\\filter-brokers-2.png",
+    "evidence\\ui-check\\filter-brokers-3.png",
     "evidence\\ui-check\\view-brokers-cards.png",
     "evidence\\ui-check\\view-brokers-table.png",
     "evidence\\ui-check\\modal-brokers-add-broker.png",
