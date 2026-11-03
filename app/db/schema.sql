@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS "leads" (
   "budget_max_inr" numeric,
   "property_interest" text,
   "broker" text,
-  "ai_mode" boolean,
+  "ai_mode" text,
   "lang" text,
   "last_message" text,
   "last_message_at" timestamptz,
@@ -273,7 +273,7 @@ ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "budget_min_inr" numeric;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "budget_max_inr" numeric;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "property_interest" text;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "broker" text;
-ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "ai_mode" boolean;
+ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "ai_mode" text;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "lang" text;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "last_message" text;
 ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "last_message_at" timestamptz;
@@ -312,10 +312,10 @@ DO $$ DECLARE r record; BEGIN
     ALTER TABLE "leads" ADD CONSTRAINT "leads_budget_max_inr_v49_5fcac565" CHECK ("budget_max_inr" >= 0) NOT VALID; END IF;
 END $$;
 DO $$ DECLARE r record; BEGIN
-  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"leads"'::regclass AND left(conname, 18) = 'leads_ai_mode_v49_' AND conname <> 'leads_ai_mode_v49_562d5c8c' LOOP
+  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"leads"'::regclass AND left(conname, 18) = 'leads_ai_mode_v49_' AND conname <> 'leads_ai_mode_v49_5caadd69' LOOP
     EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'leads', r.conname); END LOOP;
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"leads"'::regclass AND conname = 'leads_ai_mode_v49_562d5c8c') THEN
-    ALTER TABLE "leads" ADD CONSTRAINT "leads_ai_mode_v49_562d5c8c" CHECK (("ai_mode" IN ('True', 'False') OR "ai_mode" = '')) NOT VALID; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"leads"'::regclass AND conname = 'leads_ai_mode_v49_5caadd69') THEN
+    ALTER TABLE "leads" ADD CONSTRAINT "leads_ai_mode_v49_5caadd69" CHECK (("ai_mode" IN ('On', 'Off') OR "ai_mode" = '')) NOT VALID; END IF;
 END $$;
 DO $$ DECLARE r record; BEGIN
   FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"leads"'::regclass AND left(conname, 15) = 'leads_lang_v49_' AND conname <> 'leads_lang_v49_8e9db479' LOOP

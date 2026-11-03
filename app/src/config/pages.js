@@ -273,7 +273,7 @@ export const PAGES = [
         ],
         "submit": "Take over",
         "context": {
-          "AI_Mode": false
+          "AI_Mode": "Off"
         },
         "fields": []
       },
@@ -289,7 +289,7 @@ export const PAGES = [
         ],
         "submit": "Hand back",
         "context": {
-          "AI_Mode": true
+          "AI_Mode": "On"
         },
         "fields": []
       }
@@ -555,7 +555,7 @@ export const PAGES = [
         "success": "Lead added",
         "context": {
           "Stage": "New",
-          "AI_Mode": false
+          "AI_Mode": "Off"
         },
         "primary": true,
         "fields": [

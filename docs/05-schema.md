@@ -18,7 +18,7 @@ PostgreSQL, one table per entity (`app/db/schema.sql`, idempotent — apply, the
 | Budget_Max_INR | numeric |
 | Property_Interest | text |
 | Broker | text |
-| AI_Mode | boolean |
+| AI_Mode | text |
 | Lang | text |
 | Last_Message | text |
 | Last_Message_At | timestamptz |
