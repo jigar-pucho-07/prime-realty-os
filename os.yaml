@@ -486,7 +486,12 @@ pages:
         segments: { column: Status, all: All properties }
         views: [cards, table]
         columns: [ { key: Name, type: text, sub: Area_Name }, { key: Type, type: tag }, { key: Config, type: tag }, { key: Price_Min_INR, header: From, type: money }, { key: Price_Max_INR, header: To, type: money }, { key: Size, type: number }, { key: Size_Unit, header: Unit, type: text }, { key: Status, type: badge }, { key: Property_ID, type: id, priority: low } ]
-        card: { title: Name, subtitle: [Area_Name, Config], badge: Status, fields: [ { key: Price_Min_INR, label: From, icon: IndianRupee }, { key: Price_Max_INR, label: To, icon: IndianRupee }, { key: Size, label: Size, icon: Ruler }, { key: Possession, label: Possession, icon: CalendarDays } ], tags: { column: Tags }, actions: [edit_property, set_status] }
+        card: { title: Name, subtitle: [Area_Name, Config], badge: Status, fields: [ { key: Price_Min_INR, label: From, icon: IndianRupee }, { key: Price_Max_INR, label: To, icon: IndianRupee }, { key: Size, label: Size, icon: Ruler }, { key: Possession, label: Possession, icon: CalendarDays },
+                  # the deal, by status (client request, 4 Nov 2026) — `when:` read by custom/PrTableBlock; Available cards show none of these
+                  { key: Client_Name, label: Customer, icon: User, when: "Status=Under Negotiation" }, { key: Broker, label: Broker, icon: UserCheck, when: "Status=Under Negotiation" }, { key: Offered_Price_INR, label: Offered, icon: Handshake, when: "Status=Under Negotiation" },
+                  { key: Client_Name, label: Buyer, icon: User, when: "Status=Booked" }, { key: Broker, label: Broker, icon: UserCheck, when: "Status=Booked" }, { key: Booking_Amount_INR, label: Booking amount, icon: Wallet, when: "Status=Booked" }, { key: Commission_INR, label: Commission, icon: BadgePercent, when: "Status=Booked" },
+                  { key: Client_Name, label: Buyer, icon: User, when: "Status=Sold" }, { key: Broker, label: Broker, icon: UserCheck, when: "Status=Sold" }, { key: Final_Price_INR, label: Final price, icon: BadgeCheck, when: "Status=Sold" }, { key: Commission_INR, label: Commission, icon: BadgePercent, when: "Status=Sold" } ],
+                tags: { column: Tags }, actions: [edit_property, set_status] }
         search: [Name, Area_Name, Property_ID, Tags]
         filters: [Type, Area_Name, Config]
         actions: { header: [add_property], row: [edit_property, set_status] }

@@ -1115,6 +1115,72 @@ export const PAGES = [
               "key": "Possession",
               "label": "Possession",
               "icon": "CalendarDays"
+            },
+            {
+              "key": "Client_Name",
+              "label": "Customer",
+              "icon": "User",
+              "when": "Status=Under Negotiation"
+            },
+            {
+              "key": "Broker",
+              "label": "Broker",
+              "icon": "UserCheck",
+              "when": "Status=Under Negotiation"
+            },
+            {
+              "key": "Offered_Price_INR",
+              "label": "Offered",
+              "icon": "Handshake",
+              "when": "Status=Under Negotiation"
+            },
+            {
+              "key": "Client_Name",
+              "label": "Buyer",
+              "icon": "User",
+              "when": "Status=Booked"
+            },
+            {
+              "key": "Broker",
+              "label": "Broker",
+              "icon": "UserCheck",
+              "when": "Status=Booked"
+            },
+            {
+              "key": "Booking_Amount_INR",
+              "label": "Booking amount",
+              "icon": "Wallet",
+              "when": "Status=Booked"
+            },
+            {
+              "key": "Commission_INR",
+              "label": "Commission",
+              "icon": "BadgePercent",
+              "when": "Status=Booked"
+            },
+            {
+              "key": "Client_Name",
+              "label": "Buyer",
+              "icon": "User",
+              "when": "Status=Sold"
+            },
+            {
+              "key": "Broker",
+              "label": "Broker",
+              "icon": "UserCheck",
+              "when": "Status=Sold"
+            },
+            {
+              "key": "Final_Price_INR",
+              "label": "Final price",
+              "icon": "BadgeCheck",
+              "when": "Status=Sold"
+            },
+            {
+              "key": "Commission_INR",
+              "label": "Commission",
+              "icon": "BadgePercent",
+              "when": "Status=Sold"
             }
           ],
           "tags": {
