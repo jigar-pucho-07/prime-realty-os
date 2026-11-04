@@ -18,7 +18,7 @@
   "app/db/seed/leads.csv": "146637e45059ec12e1b0fa5ff6934e54944edc6b",
   "app/db/seed/manifest.json": "6d7c65742408cb4f1f7fcb7eddd042b609e064af",
   "app/db/seed/messages.csv": "18f393c899f7a4367d7bb596f004e372ed0db277",
-  "app/db/seed/properties.csv": "cab69b352541e2e07f0be4c3d7a1ee38a6ef0696",
+  "app/db/seed/properties.csv": "395238f4ddf19ac237ce4f3cb78bad74bbac2792",
   "app/db/seed/users.json": "714f54e5e3fb84f0b91ce10c724d2a148894a561",
   "app/next.config.js": "55fe7d7889376d44e11a2dbf2358a1f0e5845fba",
   "app/package-lock.json": "dbbcdae0c006f6006d25ba3629264510077a2194",
