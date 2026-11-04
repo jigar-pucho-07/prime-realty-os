@@ -5,7 +5,7 @@
 //   · the AI agent answers while AI_Mode = On; the reply box opens only after Take over (R21 — the agent stays quiet while Off)
 //   · a typed WhatsApp reply only inside 24 hours of the client's last message (Meta refuses free text after that)
 // Writes: leads.AI_Mode through a direct patch; the reply through MESSAGES.reply (simulated until the flow is wired).
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from 'antd';
 import { toast } from 'sonner';
@@ -138,7 +138,7 @@ function Composer({ c, onMode, modeBusy }) {
   };
 
   return (
-    <div className="border-t border-[color:var(--hair-5)] p-3">
+    <div className="shrink-0 border-t border-[color:var(--hair-5)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       {hint && <p id="inbox-reply-hint" className={cn('mb-2 text-[12px]', aiOn ? 'text-info-text' : inWindow ? 'text-ink-3' : 'text-warn-text')}>{hint}</p>}
       <div className="flex items-center gap-2">
         <label htmlFor="inbox-reply" className="sr-only">Message to {c.lead.Name}</label>
@@ -171,6 +171,18 @@ export default function ConversationInbox({ rows: messages = [], data }) {
   const [q, setQ] = useState('');
   const [openId, setOpenId] = useState(null);
   const [mobileThread, setMobileThread] = useState(false);
+  // The card fills the window below where it starts (header, title and filters above it vary), so the page never scrolls and the
+  // composer stays on screen; re-measured on resize. 72px below keeps the composer clear of the floating "Powered by" badge.
+  const cardRef = useRef(null); const [fitH, setFitH] = useState(null);
+  useLayoutEffect(() => {
+    const fit = () => { const el = cardRef.current; if (!el) return;
+      // the card's top as if nothing were scrolled (the window or the app's <main> may scroll)
+      const top = el.getBoundingClientRect().top + window.scrollY + (el.closest('main')?.scrollTop ?? 0);
+      setFitH(Math.max(420, Math.floor(window.innerHeight - top - 76))); };
+    fit(); window.addEventListener('resize', fit); return () => window.removeEventListener('resize', fit);
+  }, []);
+  // the full-screen chat on a phone: the page underneath must not scroll
+  useEffect(() => { if (!mobileThread || window.innerWidth >= 768) return; const o = document.body.style.overflow; document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = o; }; }, [mobileThread]);
   const [busy, setBusy] = useState(false);
   const endRef = useRef(null);
   const reduce = typeof window !== 'undefined' && prefersReducedMotion();
@@ -213,9 +225,9 @@ export default function ConversationInbox({ rows: messages = [], data }) {
     <div className="space-y-3">
     {/* filters: who is answering — above the inbox, the search stays in the list */}
     <ChipRow role="group" aria-label="Filter conversations">{FILTERS.map((f) => <Chip key={f.key} label={f.label} count={counts[f.key]} pressed={filter === f.key} onClick={() => setFilter(f.key)} />)}</ChipRow>
-    <div className={cn(CARD, 'grid grid-cols-[minmax(0,1fr)] md:grid-cols-[320px_minmax(0,1fr)] h-[calc(100dvh-190px)] min-h-[520px]')} data-os-inbox>
+    <div ref={cardRef} style={fitH ? { height: fitH } : undefined} className={cn(CARD, 'grid grid-cols-[minmax(0,1fr)] md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[340px_minmax(0,1fr)] h-[calc(100dvh-200px)] min-h-[420px]')} data-os-inbox>
       {/* list */}
-      <section aria-label="Conversations" className={cn('min-h-0 flex-col border-r border-[color:var(--hair-5)]', mobileThread ? 'hidden md:flex' : 'flex')}>
+      <section aria-label="Conversations" className={cn('min-h-0 min-w-0 flex-col md:border-r border-[color:var(--hair-5)]', mobileThread ? 'hidden md:flex' : 'flex')}>
         <div className="p-3 border-b border-[color:var(--hair-5)]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3" aria-hidden />
@@ -231,8 +243,10 @@ export default function ConversationInbox({ rows: messages = [], data }) {
 
       {/* thread */}
       {current && (
-        <section aria-label={`Conversation with ${current.lead.Name}`} className={cn('min-h-0 flex-col', mobileThread ? 'flex' : 'hidden md:flex')}>
-          <header className="flex items-center gap-3 px-4 py-3 border-b border-[color:var(--hair-5)]">
+        // phone: the open chat is a full-screen view above the app (back button top-left); desktop: the right-hand panel
+        <section aria-label={`Conversation with ${current.lead.Name}`} data-os-chat-full={mobileThread ? '' : undefined}
+          className={cn('min-h-0 min-w-0 flex-col', mobileThread ? 'flex max-md:fixed max-md:inset-0 max-md:z-50 max-md:bg-surface max-md:h-[100dvh]' : 'hidden md:flex')}>
+          <header className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-[color:var(--hair-5)]">
             <button type="button" className="md:hidden -ml-1 p-1.5 rounded-lg text-ink-2 hover:bg-surface-2" aria-label="Back to conversations" onClick={() => setMobileThread(false)}>
               <ArrowLeft className="w-5 h-5" />
             </button>

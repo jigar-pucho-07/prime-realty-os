@@ -3,3 +3,54 @@
  * ("WhatsApp not sent — workflow simulated"), and /api/health reports wiring to an administrator; the chip goes away by
  * itself once WEBHOOK_MESSAGES / WEBHOOK_VISITS are set. */
 [data-os-simulated] { display: none !important; }
+
+/* Inbox page only (client request, 4 Nov 2026): no floating "Powered by" badge — it sat over the composer. Every other page keeps it. */
+body:has([data-os-inbox]) [data-os-powered-by] { display: none !important; }
+
+/* Kanban boards (client report, 4 Nov 2026 — "Leads: the Lost column is not visible"). The kernel gives every column a fixed 264px
+   and the row `min-width: max-content`, so five stages need ~1400px: with the sidebar open, Lost sat off-screen behind a horizontal
+   scrollbar at the bottom of a tall board. Desktop: the columns share the width (never narrower than 168px; only then does the board
+   scroll). Phone: one column at a time, 80% wide, snapping as you swipe so the next stage peeks in. Cards, counts, drag-and-drop and
+   the locked stages are unchanged (pure layout). */
+[data-os-kanban] > div { display: grid !important; grid-auto-flow: column; grid-auto-columns: minmax(168px, 1fr); min-width: 0 !important; width: 100%; }
+[data-os-kanban] [data-os-kanban-column] { width: auto !important; min-width: 0; }
+@media (max-width: 767px) {
+  [data-os-kanban] { scroll-snap-type: x mandatory; scroll-padding-left: 1rem; }
+  [data-os-kanban] > div { grid-auto-columns: 80%; }
+  [data-os-kanban] [data-os-kanban-column] { scroll-snap-align: start; }
+}
+
+/* Kanban card footer (client report, 4 Nov 2026 — "card content not displaying properly"). In a ~200px card the broker name got ~70px
+   ("Sunil Sh…") and the call / WhatsApp buttons wrapped and stacked. The footer (the card's only `items-center` row) stays on one
+   line: avatar, then the name taking all the room left, then the two buttons side by side as 28px squares. Same links, same clicks. */
+[data-os-kanban-card] > div.items-center { flex-wrap: nowrap; gap: 6px; }
+[data-os-kanban-card] > div.items-center > .truncate,
+[data-os-kanban-card] > div.items-center > [data-os-unassigned] { flex: 1 1 auto; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-os-kanban-card] > div.items-center > div.ml-auto { flex: 0 0 auto; flex-wrap: nowrap !important; gap: 4px; }
+[data-os-kanban-card] > div.items-center > div.ml-auto > a,
+[data-os-kanban-card] > div.items-center > div.ml-auto > button { width: 28px !important; height: 28px !important; min-width: 28px; padding: 0 !important; justify-content: center; }
+/* name, area, budget and date: long values wrap or end in … inside the card, never past its edge */
+[data-os-kanban-card] { overflow: hidden; }
+[data-os-kanban-card] .badge { max-width: 100%; }
+/* …and a narrow card (under 230px — five stages beside the sidebar) has no room for both on one line: the broker gets the full
+   line and the call / WhatsApp buttons sit on their own line under it. Measured on the card itself (container query). */
+[data-os-kanban-card] { container-type: inline-size; }
+@container (max-width: 229px) {
+  [data-os-kanban-card] > div.items-center { flex-wrap: wrap; row-gap: 6px; }
+  [data-os-kanban-card] > div.items-center > .truncate,
+  [data-os-kanban-card] > div.items-center > [data-os-unassigned] { flex: 1 1 calc(100% - 26px); }
+  [data-os-kanban-card] > div.items-center > [data-os-unassigned]:first-child { flex-basis: 100%; }
+  [data-os-kanban-card] > div.items-center > div.ml-auto { margin-left: 0 !important; }
+}
+
+/* List toolbar with period chips (Leads and the other dated lists — client request, 4 Nov 2026). Before: the search was squeezed to
+   ~100px and the Board/Table toggle + record count wrapped onto a line of their own. Now the search fills the first line with the
+   filters (never under 320px), the period chips start the second line, and the toggle + count sit together at its right end,
+   vertically centred, at every width: from 640px the chips take the whole line but 300px (room for the toggle + count), so they never
+   fit beside the filters and always share their line with the toggle + count. The kernel's 12px gap is kept. Phones stack the
+   controls; the toggle + count keep their own width and stay together on the right. */
+[data-os-toolbar]:has([data-os-period]) > .ant-input-affix-wrapper:first-child { flex: 1 1 320px; max-width: none; }
+[data-os-toolbar]:has([data-os-period]) > .os-filter { flex-shrink: 0; }
+@media (min-width: 640px) { [data-os-toolbar]:has([data-os-period]) > [data-os-period] { flex: 1 0 calc(100% - 300px); } }
+[data-os-toolbar] > span.ml-auto { margin-left: auto !important; align-self: center; display: inline-flex; align-items: center; gap: 12px; flex: 0 0 auto !important; width: auto !important; }
+[data-os-toolbar] > span.ml-auto [data-os-count] { line-height: 1; }
