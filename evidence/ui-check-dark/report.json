@@ -1,13 +1,19 @@
 {
   "os": "Prime Realty OS",
-  "status": "pass",
+  "status": "fail",
   "viewport": "desktop",
-  "passed": 848,
-  "failed": 0,
-  "failures": [],
+  "passed": 875,
+  "failed": 4,
+  "failures": [
+    "leads: spacing utilities have no effect on 1 element(s) \u2014 check the Tailwind setup, not the classes: ['gap-3 on div']",
+    "visits: spacing utilities have no effect on 1 element(s) \u2014 check the Tailwind setup, not the classes: ['gap-3 on div']",
+    "calls: spacing utilities have no effect on 1 element(s) \u2014 check the Tailwind setup, not the classes: ['gap-3 on div']",
+    "ai_agents: spacing utilities have no effect on 1 element(s) \u2014 check the Tailwind setup, not the classes: ['gap-3 on div']"
+  ],
   "warnings": [
     "inventory \u203a add_property: U6 8 fields in one form \u2014 split into sections or steps of 7 or fewer",
-    "inventory \u203a edit_property: U6 8 fields in one form \u2014 split into sections or steps of 7 or fewer"
+    "inventory \u203a edit_property: U6 8 fields in one form \u2014 split into sections or steps of 7 or fewer",
+    "inventory \u203a set_status: U6 8 fields in one form \u2014 split into sections or steps of 7 or fewer"
   ],
   "theme": "dark",
   "skipped": [
@@ -107,7 +113,6 @@
     "evidence\\ui-check-dark\\page-users.png",
     "evidence\\ui-check-dark\\modal-users-add-user.png",
     "evidence\\ui-check-dark\\modal-users-new-role.png",
-    "evidence\\ui-check-dark\\header-search.png",
     "evidence\\ui-check-dark\\header-notifications.png",
     "evidence\\ui-check-dark\\login-670.png",
     "evidence\\ui-check-dark\\login-390.png"
