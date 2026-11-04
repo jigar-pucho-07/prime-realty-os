@@ -1,15 +1,10 @@
 {
   "os": "Prime Realty OS",
-  "status": "fail",
+  "status": "pass",
   "viewport": "mobile",
-  "passed": 836,
-  "failed": 4,
-  "failures": [
-    "leads: spacing utilities have no effect on 1 element(s) \u2014 check the Tailwind setup, not the classes: ['gap-3 on div']",
-    "visits: spacing utilities have no effect on 1 element(s) \u2014 check the Tailwind setup, not the classes: ['gap-3 on div']",
-    "calls: spacing utilities have no effect on 1 element(s) \u2014 check the Tailwind setup, not the classes: ['gap-3 on div']",
-    "ai_agents: spacing utilities have no effect on 1 element(s) \u2014 check the Tailwind setup, not the classes: ['gap-3 on div']"
-  ],
+  "passed": 840,
+  "failed": 0,
+  "failures": [],
   "warnings": [
     "leads: U1b 44 tap target(s) under 32px on a phone [('Call +91 43210 98765', 28, 28), ('WhatsApp +91 43210 9', 28, 28), ('Unassigned \u00b7 Assign', 202, 18)]",
     "inventory \u203a add_property: U6 8 fields in one form \u2014 split into sections or steps of 7 or fewer",
