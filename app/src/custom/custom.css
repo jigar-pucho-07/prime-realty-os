@@ -1,0 +1,5 @@
+/* src/custom/custom.css — Prime Realty's own style overrides (never regenerated; imported by src/custom/index.js).
+ * Header "Workflows simulated" chip hidden at the client's request (4 Nov 2026). Unwired sends still say so in their toast
+ * ("WhatsApp not sent — workflow simulated"), and /api/health reports wiring to an administrator; the chip goes away by
+ * itself once WEBHOOK_MESSAGES / WEBHOOK_VISITS are set. */
+[data-os-simulated] { display: none !important; }
