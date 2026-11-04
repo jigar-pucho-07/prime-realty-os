@@ -1,11 +1,19 @@
 {
   "os": "Prime Realty OS",
-  "status": "pass",
+  "status": "fail",
   "viewport": "desktop",
-  "passed": 851,
-  "failed": 0,
-  "failures": [],
+  "passed": 872,
+  "failed": 6,
+  "failures": [
+    "leads \u203a add_lead: controls start at 3 different left edges for a 2-column form ([332, 691, 827])",
+    "leads \u203a add_lead: controls end at 3 different right edges for a 2-column form ([675, 819, 1034])",
+    "brokers \u203a add_broker: controls start at 3 different left edges for a 2-column form ([332, 691, 827])",
+    "brokers \u203a add_broker: controls end at 3 different right edges for a 2-column form ([675, 819, 1034])",
+    "brokers \u203a edit_broker: controls start at 2 different left edges for a 1-column form ([452, 588])",
+    "brokers \u203a edit_broker: controls end at 2 different right edges for a 1-column form ([580, 914])"
+  ],
   "warnings": [
+    "leads \u203a add_lead: U6 8 fields in one form \u2014 split into sections or steps of 7 or fewer",
     "inventory \u203a add_property: U6 8 fields in one form \u2014 split into sections or steps of 7 or fewer",
     "inventory \u203a edit_property: U6 8 fields in one form \u2014 split into sections or steps of 7 or fewer"
   ],
