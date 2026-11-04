@@ -510,6 +510,10 @@ export const PAGES = [
                   "type": "fields",
                   "when": "Stage=Booked",
                   "title": "Booking",
+                  "as": {
+                    "Property_Interest": "Booked_Property",
+                    "Broker": "Assigned_Broker"
+                  },
                   "columns": [
                     "Property_Interest",
                     "Booking_Amount_INR",

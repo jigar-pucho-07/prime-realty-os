@@ -434,7 +434,7 @@ pages:
                 { type: callout, column: Summary, title: What the AI agent understood, tone: neutral },
                 { type: fields, title: Contact and broker, columns: [Phone, Source, Broker, AI_Mode, Lang, Property_Interest], hide_empty: true },
                 { type: related, when: "Stage=Visit Scheduled", entity: bookings, by: Lead_ID, title: Site visit, columns: [Visit_At, Property_Name, Broker, Status, Notes] },
-                { type: fields, when: "Stage=Booked", title: Booking, columns: [Property_Interest, Booking_Amount_INR, Booking_Date, Broker], hide_empty: false },
+                { type: fields, when: "Stage=Booked", title: Booking, as: { Property_Interest: Booked_Property, Broker: Assigned_Broker }, columns: [Property_Interest, Booking_Amount_INR, Booking_Date, Broker], hide_empty: false },
                 { type: related, when: "Stage in [Visit Scheduled, Booked]", entity: properties, match: { column: Name, equals: Property_Interest }, title: Property, columns: [Area_Name, Config, Price_Min_INR, Price_Max_INR, Possession, Status] },
                 { type: fields, when: "Stage=Lost", title: Why it was lost, columns: [Lost_Reason], hide_empty: false },
                 { type: callout, when: "Stage=Lost", column: Lost_Notes, title: Notes, tone: neutral } ] }
