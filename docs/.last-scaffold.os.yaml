@@ -30,7 +30,6 @@ design:
   tone: pucho
   shell: sidebar
   direction: "An office desk used all day: the inbox and the visit list first, numbers second"
-  sidebar: { action: { label: Add lead, page: leads, modal: add_lead } }
 
 requirements:
   - { id: R1, text: "A Client who sends a WhatsApp message from a new number becomes a lead, deduplicated on phone" }

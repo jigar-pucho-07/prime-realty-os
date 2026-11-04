@@ -7,11 +7,6 @@ export const DESIGN = {
     "admin": "sidebar"
   },
   "sidebar": {
-    "action": {
-      "label": "Add lead",
-      "page": "leads",
-      "modal": "add_lead"
-    },
     "style": "light",
     "width": 260,
     "footer": "profile"

@@ -1,5 +1,5 @@
 # 01 — PRD · Prime Realty OS
-_Generated 2026-11-03 from os.yaml._
+_Generated 2026-11-04 from os.yaml._
 
 **Client:** Prime Realty India, Bhopal  
 **Outcome:** Every WhatsApp and phone enquiry answered by the AI agent at once, booked for a site visit with the right broker, and followed up until it closes.  

@@ -1,5 +1,5 @@
 # Wiring map · Prime Realty OS
-_Generated 2026-11-03._
+_Generated 2026-11-04._
 
 ## Screen → flow.action
 - Dashboard `/` → direct patch (Assign broker), direct patch (Visit outcome), direct patch (Stop follow-ups)
