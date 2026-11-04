@@ -79,7 +79,8 @@ Data: **PostgreSQL** (one database per client, single-tenant) · security: **§1
 | Leads | Add lead | create: 7 fields · direct |
 | Leads | Book site visit | custom: 5 fields · VISITS |
 | Leads | Assign broker | edit: 1 field · direct |
-| Leads | Mark lost | status: 1 field · direct |
+| Leads | Record booking | status: 4 fields · direct |
+| Leads | Mark lost | status: 2 fields · direct |
 | Site visits | Visit outcome | status: 4 fields · direct |
 | Site visits | Reschedule or reassign | edit: 2 fields · direct |
 | Site visits | Send confirmation to client | status: 0 fields · VISITS |
@@ -117,7 +118,7 @@ Data: **PostgreSQL** (one database per client, single-tenant) · security: **§1
 - Changing the agent's name (Priya) and reply-language rule from the app — they are constants of PR - WA_AGENT / VOICE_AGENT, changed in Studio; a fourth read would push the booking path past the 14-step budget. Follow-up timing and company details stay in Agent settings
 
 ## Footprint (lean frontend, v4.3)
-- footprint: 13 pages in the nav (0 hidden) · 23 KPIs · 4 charts · 22 modals · 5 drawer tabs · for 22 requirements
+- footprint: 13 pages in the nav (0 hidden) · 23 KPIs · 4 charts · 23 modals · 5 drawer tabs · for 22 requirements
 - Budget: overview ≤ 4 KPIs · ≤ 2 charts · ≤ 3 queues; a page ≤ 4 KPIs · ≤ 6 modals · drawer ≤ 3 tabs; nav pages ≤ requirements. Pages marked `badge: Preview` stay off the nav until `os.show_preview: true`.
 - Within budget.
 

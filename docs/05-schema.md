@@ -27,6 +27,9 @@ PostgreSQL, one table per entity (`app/db/schema.sql`, idempotent — apply, the
 | Lost_Reason | text |
 | Summary | text |
 | History | text |
+| Booking_Amount_INR | numeric |
+| Booking_Date | date |
+| Lost_Notes | text |
 
 id: Lead_ID (LD-…) · status: Stage ['New', 'Engaged', 'Visit Scheduled', 'Booked', 'Lost']
 

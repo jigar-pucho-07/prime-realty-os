@@ -95,7 +95,9 @@ entities:
     due: { column: Next_Followup_At, closed: "Stage in [Booked, Lost]" }
     contact: { phone: Phone, whatsapp: Phone }
     status: { column: Stage, values: [New, Engaged, Visit Scheduled, Booked, Lost] }
-    columns: [Lead_ID, Created_At, Name, Phone, Source, Stage, Purpose, Property_Type, BHK, Area_Pref, Budget_Min_INR, Budget_Max_INR, Property_Interest, Broker, AI_Mode, Lang, Last_Message, Last_Message_At, Next_Followup_At, Followup_Reason, Lost_Reason, Summary, History]
+    columns: [Lead_ID, Created_At, Name, Phone, Source, Stage, Purpose, Property_Type, BHK, Area_Pref, Budget_Min_INR, Budget_Max_INR, Property_Interest, Broker, AI_Mode, Lang, Last_Message, Last_Message_At, Next_Followup_At, Followup_Reason, Lost_Reason, Summary, History,
+              # booking and loss details (client request, 4 Nov 2026) — Record booking / Mark lost fill them; the drawer shows them by stage
+              Booking_Amount_INR, Booking_Date, Lost_Notes]
     # Last_Message / Last_Message_At = the CLIENT's last message (the 24-hour window, follow-up replies). History = the last 20 turns,
     # kept by the agent flows so a turn never reads the whole messages table. Followup_Reason set by the agent on "baad mein".
     fields:
@@ -108,6 +110,8 @@ entities:
       Lang:           { one_of: [Hinglish, Hindi, English] }
       Budget_Min_INR: { type: number, min: 0 }
       Budget_Max_INR: { type: number, min: 0 }
+      Booking_Amount_INR: { type: number, positive: true }
+      Booking_Date:   { type: date }
     transitions:
       New:             [Engaged, Visit Scheduled, Lost]
       Engaged:         [Visit Scheduled, Lost]
@@ -123,7 +127,7 @@ entities:
       - { Lead_ID: LD-2026-0138, Created_At: "2026-08-06T09:40:00+05:30", Name: Deepak Mishra, Phone: "+916543210987", Source: Voice, Stage: Visit Scheduled, Purpose: Invest, Property_Type: Plot, BHK: Plot, Area_Pref: Misrod, Budget_Min_INR: 1800000, Budget_Max_INR: 2200000, Property_Interest: Plot 200 sq.yd, Broker: Meena Verma, AI_Mode: "On", Lang: Hindi, Last_Message: "Call ended — transcript ready", Last_Message_At: "2026-08-06T09:46:00+05:30", Summary: "Plot for investment in Misrod; visit Friday" }
       - { Lead_ID: LD-2026-0137, Created_At: "2026-08-05T14:00:00+05:30", Name: Kavita Patel, Phone: "+915432109876", Source: WhatsApp, Stage: New, Purpose: Buy, Property_Type: Residential, BHK: 4 BHK, Area_Pref: Chinar Park, Budget_Min_INR: 12000000, Budget_Max_INR: 15000000, Property_Interest: 4BHK Premium Villa, Broker: "", AI_Mode: "On", Lang: Hinglish, Last_Message: "Villa ke photos bhejo please", Last_Message_At: "2026-08-06T08:30:00+05:30" }
       - { Lead_ID: LD-2026-0136, Created_At: "2026-08-04T12:00:00+05:30", Name: Mohit Jain, Phone: "+914321098765", Source: WhatsApp, Stage: Engaged, Purpose: Buy, Property_Type: Residential, BHK: 4 BHK, Area_Pref: Chinar Park, Budget_Min_INR: 12000000, Budget_Max_INR: 14000000, Property_Interest: 4BHK Premium Villa, Broker: Sunil Sharma, AI_Mode: "On", Lang: Hinglish, Last_Message: "Thoda baad mein call karna", Last_Message_At: "2026-08-06T07:30:00+05:30", Next_Followup_At: "2026-08-07T11:00:00+05:30" }
-      - { Lead_ID: LD-2026-0135, Created_At: "2026-08-02T11:00:00+05:30", Name: Aman Tiwari, Phone: "+919988776655", Source: WhatsApp, Stage: Lost, Purpose: Buy, Property_Type: Residential, BHK: 2 BHK, Area_Pref: Habibganj, Budget_Min_INR: 4000000, Budget_Max_INR: 4500000, Property_Interest: 2BHK Modern Flat, Broker: Meena Verma, AI_Mode: "On", Lang: Hindi, Lost_Reason: "Bought elsewhere" }
+      - { Lead_ID: LD-2026-0135, Created_At: "2026-08-02T11:00:00+05:30", Name: Aman Tiwari, Phone: "+919988776655", Source: WhatsApp, Stage: Lost, Purpose: Buy, Property_Type: Residential, BHK: 2 BHK, Area_Pref: Habibganj, Budget_Min_INR: 4000000, Budget_Max_INR: 4500000, Property_Interest: 2BHK Modern Flat, Broker: Meena Verma, AI_Mode: "On", Lang: Hindi, Lost_Reason: "Bought elsewhere", Lost_Notes: "Took a resale flat in Habibganj from another agent at ₹41L; open to a 3BHK next year" }
 
   - name: properties
     id: { column: Property_ID, prefix: "PR-" }
@@ -423,11 +427,21 @@ pages:
         drawer:
           title_column: Name
           tabs:
-            - { label: Lead, sections: [ { type: tiles, title: Requirement, columns: [Purpose, Property_Type, BHK, Area_Pref, Budget_Min_INR, Budget_Max_INR] }, { type: callout, column: Summary, title: What the AI agent understood, tone: neutral }, { type: fields, columns: [Phone, Source, Broker, AI_Mode, Lang, Property_Interest, Lost_Reason], hide_empty: true } ] }
+            # Lead tab: the requirement and contact for every lead, then the part that fits the stage (`when:` — read by custom/PrTableBlock;
+            # the kernel drawer has no per-section condition). Client request, 4 Nov 2026.
+            - { label: Lead, sections: [
+                { type: tiles, title: Requirement, columns: [Purpose, Property_Type, BHK, Area_Pref, Budget_Min_INR, Budget_Max_INR] },
+                { type: callout, column: Summary, title: What the AI agent understood, tone: neutral },
+                { type: fields, title: Contact and broker, columns: [Phone, Source, Broker, AI_Mode, Lang, Property_Interest], hide_empty: true },
+                { type: related, when: "Stage=Visit Scheduled", entity: bookings, by: Lead_ID, title: Site visit, columns: [Visit_At, Property_Name, Broker, Status, Notes] },
+                { type: fields, when: "Stage=Booked", title: Booking, columns: [Property_Interest, Booking_Amount_INR, Booking_Date, Broker], hide_empty: false },
+                { type: related, when: "Stage in [Visit Scheduled, Booked]", entity: properties, match: { column: Name, equals: Property_Interest }, title: Property, columns: [Area_Name, Config, Price_Min_INR, Price_Max_INR, Possession, Status] },
+                { type: fields, when: "Stage=Lost", title: Why it was lost, columns: [Lost_Reason], hide_empty: false },
+                { type: callout, when: "Stage=Lost", column: Lost_Notes, title: Notes, tone: neutral } ] }
             - { label: Conversation, sections: [ { type: timeline, entity: messages, by: Lead_ID, date: At, actor: Sender, body: Text, limit: 20 } ] }
             - { label: Visits, sections: [ { type: related, entity: bookings, by: Lead_ID, title: Site visits, columns: [Property_Name, Visit_At, Broker, Status] } ] }
         empty: { title: No leads yet, reason: "Leads arrive on their own when a client messages the WhatsApp number or calls.", action: add_lead }
-        actions: { header: [add_lead], row: [book_visit, assign_broker, lose] }
+        actions: { header: [add_lead], row: [book_visit, record_booking, assign_broker, lose] }
     modals:
       - { id: add_lead, kind: create, title: Add lead, direct: insert, submit: Add lead, success: "Lead added", context: { Stage: New, AI_Mode: "Off" }, primary: true,
           fields: [ { key: Name, label: Client name, type: text, required: true }, { key: Phone, label: Mobile, type: text, required: true, placeholder: "+91…" }, { key: Source, label: Source, type: select, options: [Walk-in, Referral, WhatsApp, Voice], default: Walk-in, required: true },
@@ -436,8 +450,13 @@ pages:
           fields: [ { key: Property_Name, label: Property, type: select, options_from: properties.Name, required: true }, { key: Broker, label: Broker, type: select, options_from: brokers.Name, required: true }, { key: Visit_At, label: Visit date and time, type: date, required: true }, { key: Budget_INR, label: Budget (₹), type: number }, { key: Notes, label: Notes for the broker, type: textarea, rows: 2 } ] }
       - { id: assign_broker, kind: edit, title: Assign broker, direct: patch, summary: [Name, Area_Pref], submit: Assign, success: "Broker assigned",
           fields: [ { key: Broker, label: Broker, type: select, options_from: brokers.Name, required: true } ] }
+      # Record booking: moves a lead to Booked (from Visit Scheduled — the stage machine refuses other moves) or fills in the booking of
+      # a lead already Booked. Dragging a card to Booked still works; its booking details then show as "—" until recorded here.
+      - { id: record_booking, kind: status, title: Record booking, direct: patch, summary: [Name, Stage], submit: Save booking, success: "Booking saved", context: { Stage: Booked },
+          fields: [ { key: Property_Interest, label: Property, type: select, options_from: properties.Name, required: true }, { key: Booking_Amount_INR, label: Booking amount (₹), type: number, required: true },
+                    { key: Booking_Date, label: Booking date, type: date, required: true }, { key: Broker, label: Broker, type: select, options_from: brokers.Name } ] }
       - { id: lose, kind: status, title: Mark lost, direct: patch, summary: [Name, Stage], submit: Mark lost, context: { Stage: Lost },
-          fields: [ { key: Lost_Reason, label: Reason, type: textarea, rows: 2, required: true } ] }
+          fields: [ { key: Lost_Reason, label: Reason, type: textarea, rows: 2, required: true }, { key: Lost_Notes, label: Notes, type: textarea, rows: 3, placeholder: "What happened, and anything to try later" } ] }
 
   - id: visits
     covers: [R13, R16]

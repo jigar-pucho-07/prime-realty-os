@@ -25,7 +25,10 @@
         "Followup_Reason",
         "Lost_Reason",
         "Summary",
-        "History"
+        "History",
+        "Booking_Amount_INR",
+        "Booking_Date",
+        "Lost_Notes"
       ],
       "types": {
         "Lead_ID": "text",
@@ -50,7 +53,10 @@
         "Followup_Reason": "text",
         "Lost_Reason": "text",
         "Summary": "text",
-        "History": "text"
+        "History": "text",
+        "Booking_Amount_INR": "numeric",
+        "Booking_Date": "date",
+        "Lost_Notes": "text"
       },
       "unique": [
         "Phone"

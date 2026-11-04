@@ -481,16 +481,76 @@ export const PAGES = [
                 },
                 {
                   "type": "fields",
+                  "title": "Contact and broker",
                   "columns": [
                     "Phone",
                     "Source",
                     "Broker",
                     "AI_Mode",
                     "Lang",
-                    "Property_Interest",
-                    "Lost_Reason"
+                    "Property_Interest"
                   ],
                   "hide_empty": true
+                },
+                {
+                  "type": "related",
+                  "when": "Stage=Visit Scheduled",
+                  "entity": "bookings",
+                  "by": "Lead_ID",
+                  "title": "Site visit",
+                  "columns": [
+                    "Visit_At",
+                    "Property_Name",
+                    "Broker",
+                    "Status",
+                    "Notes"
+                  ]
+                },
+                {
+                  "type": "fields",
+                  "when": "Stage=Booked",
+                  "title": "Booking",
+                  "columns": [
+                    "Property_Interest",
+                    "Booking_Amount_INR",
+                    "Booking_Date",
+                    "Broker"
+                  ],
+                  "hide_empty": false
+                },
+                {
+                  "type": "related",
+                  "when": "Stage in [Visit Scheduled, Booked]",
+                  "entity": "properties",
+                  "match": {
+                    "column": "Name",
+                    "equals": "Property_Interest"
+                  },
+                  "title": "Property",
+                  "columns": [
+                    "Area_Name",
+                    "Config",
+                    "Price_Min_INR",
+                    "Price_Max_INR",
+                    "Possession",
+                    "Status"
+                  ]
+                },
+                {
+                  "type": "fields",
+                  "when": "Stage=Lost",
+                  "title": "Why it was lost",
+                  "columns": [
+                    "Lost_Reason"
+                  ],
+                  "hide_empty": false
+                },
+                {
+                  "type": "callout",
+                  "when": "Stage=Lost",
+                  "column": "Lost_Notes",
+                  "title": "Notes",
+                  "tone": "neutral"
                 }
               ]
             },
@@ -538,6 +598,7 @@ export const PAGES = [
           ],
           "row": [
             "book_visit",
+            "record_booking",
             "assign_broker",
             "lose"
           ]
@@ -692,6 +753,48 @@ export const PAGES = [
         ]
       },
       {
+        "id": "record_booking",
+        "kind": "status",
+        "title": "Record booking",
+        "direct": "patch",
+        "summary": [
+          "Name",
+          "Stage"
+        ],
+        "submit": "Save booking",
+        "success": "Booking saved",
+        "context": {
+          "Stage": "Booked"
+        },
+        "fields": [
+          {
+            "key": "Property_Interest",
+            "label": "Property",
+            "type": "select",
+            "options_from": "properties.Name",
+            "required": true
+          },
+          {
+            "key": "Booking_Amount_INR",
+            "label": "Booking amount (₹)",
+            "type": "number",
+            "required": true
+          },
+          {
+            "key": "Booking_Date",
+            "label": "Booking date",
+            "type": "date",
+            "required": true
+          },
+          {
+            "key": "Broker",
+            "label": "Broker",
+            "type": "select",
+            "options_from": "brokers.Name"
+          }
+        ]
+      },
+      {
         "id": "lose",
         "kind": "status",
         "title": "Mark lost",
@@ -711,6 +814,13 @@ export const PAGES = [
             "type": "textarea",
             "rows": 2,
             "required": true
+          },
+          {
+            "key": "Lost_Notes",
+            "label": "Notes",
+            "type": "textarea",
+            "rows": 3,
+            "placeholder": "What happened, and anything to try later"
           }
         ]
       }
