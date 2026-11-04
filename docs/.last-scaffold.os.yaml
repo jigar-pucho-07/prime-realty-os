@@ -131,7 +131,9 @@ entities:
     title: Name
     subtitle: [Area_Name]
     status: { column: Status, values: [Available, Under Negotiation, Booked, Sold] }
-    columns: [Property_ID, Created_At, Name, Type, Config, Area_Name, City, Price_Min_INR, Price_Max_INR, Size, Size_Unit, Floor, Parking, Possession, Status, Tags]
+    columns: [Property_ID, Created_At, Name, Type, Config, Area_Name, City, Price_Min_INR, Price_Max_INR, Size, Size_Unit, Floor, Parking, Possession, Status, Tags,
+              # the deal on this property (client request, 4 Nov 2026) — filled when its status changes; the drawer shows the part that fits the status
+              Client_Name, Broker, Offered_Price_INR, Expected_Price_INR, Negotiation_Notes, Booking_Amount_INR, Final_Price_INR, Commission_INR, Payment_Mode, Payment_Status, Amount_Received_INR]
     fields:
       Type:          { one_of: [Residential, Commercial, Plot] }
       Config:        { one_of: [1 BHK, 2 BHK, 3 BHK, 4 BHK, Shop, Office, Plot, Land] }
@@ -139,15 +141,23 @@ entities:
       Price_Min_INR: { type: number, positive: true }
       Price_Max_INR: { type: number, positive: true }
       Size:          { type: number, positive: true }
+      Offered_Price_INR:   { type: number, positive: true }
+      Expected_Price_INR:  { type: number, positive: true }
+      Booking_Amount_INR:  { type: number, positive: true }
+      Final_Price_INR:     { type: number, positive: true }
+      Commission_INR:      { type: number, positive: true }
+      Amount_Received_INR: { type: number, positive: true }
+      Payment_Mode:        { one_of: [Home loan, Bank transfer, Cheque, UPI, Cash] }
+      Payment_Status:      { one_of: [Pending, Part paid, Fully paid] }
     seed: 0
     examples:
       - { Property_ID: PR-001, Created_At: "2026-07-01T10:00:00+05:30", Name: 3BHK Luxury Apartment, Type: Residential, Config: 3 BHK, Area_Name: Kolar Road, City: Bhopal, Price_Min_INR: 6500000, Price_Max_INR: 7500000, Size: 1450, Size_Unit: sq.ft, Floor: 5th, Parking: 2 Covered, Possession: Ready to Move, Status: Available, Tags: "Ready to Move, Gated Society, RERA Approved" }
       - { Property_ID: PR-002, Created_At: "2026-07-01T10:00:00+05:30", Name: 2BHK Modern Flat, Type: Residential, Config: 2 BHK, Area_Name: Habibganj, City: Bhopal, Price_Min_INR: 4200000, Price_Max_INR: 4800000, Size: 1050, Size_Unit: sq.ft, Floor: 3rd, Parking: 1 Covered, Possession: Dec 2025, Status: Available, Tags: "RERA Approved" }
-      - { Property_ID: PR-003, Created_At: "2026-07-01T10:00:00+05:30", Name: 4BHK Premium Villa, Type: Residential, Config: 4 BHK, Area_Name: Chinar Park, City: Bhopal, Price_Min_INR: 12000000, Price_Max_INR: 15000000, Size: 3200, Size_Unit: sq.ft, Floor: G+1, Parking: 3 Covered, Possession: Ready to Move, Status: Booked, Tags: "Private Pool, Smart Home, Luxury" }
+      - { Property_ID: PR-003, Created_At: "2026-07-01T10:00:00+05:30", Name: 4BHK Premium Villa, Type: Residential, Config: 4 BHK, Area_Name: Chinar Park, City: Bhopal, Price_Min_INR: 12000000, Price_Max_INR: 15000000, Size: 3200, Size_Unit: sq.ft, Floor: G+1, Parking: 3 Covered, Possession: Ready to Move, Status: Booked, Tags: "Private Pool, Smart Home, Luxury", Client_Name: Amit Verma, Broker: Rajesh Kumar, Booking_Amount_INR: 500000, Commission_INR: 270000 }
       - { Property_ID: PR-004, Created_At: "2026-07-01T10:00:00+05:30", Name: Commercial Shop Space, Type: Commercial, Config: Shop, Area_Name: DB Mall Road, City: Bhopal, Price_Min_INR: 2500000, Price_Max_INR: 3500000, Size: 450, Size_Unit: sq.ft, Floor: Ground, Parking: "", Possession: Ready, Status: Available, Tags: "Main Road, High Footfall" }
       - { Property_ID: PR-005, Created_At: "2026-07-01T10:00:00+05:30", Name: Plot 200 sq.yd, Type: Plot, Config: Plot, Area_Name: Misrod, City: Bhopal, Price_Min_INR: 1800000, Price_Max_INR: 2200000, Size: 200, Size_Unit: sq.yd, Floor: "", Parking: "", Possession: Ready, Status: Available, Tags: "RERA Approved, Corner Plot" }
-      - { Property_ID: PR-006, Created_At: "2026-07-01T10:00:00+05:30", Name: 3BHK Builder Floor, Type: Residential, Config: 3 BHK, Area_Name: Arera Colony, City: Bhopal, Price_Min_INR: 5500000, Price_Max_INR: 6200000, Size: 1300, Size_Unit: sq.ft, Floor: 2nd, Parking: 1 Covered, Possession: Ready to Move, Status: Sold, Tags: "" }
-      - { Property_ID: PR-007, Created_At: "2026-07-01T10:00:00+05:30", Name: 2BHK Studio Apartment, Type: Residential, Config: 2 BHK, Area_Name: MP Nagar, City: Bhopal, Price_Min_INR: 3500000, Price_Max_INR: 4200000, Size: 890, Size_Unit: sq.ft, Floor: 7th, Parking: 1 Covered, Possession: Ready to Move, Status: Available, Tags: "High Rise, Metro Nearby" }
+      - { Property_ID: PR-006, Created_At: "2026-07-01T10:00:00+05:30", Name: 3BHK Builder Floor, Type: Residential, Config: 3 BHK, Area_Name: Arera Colony, City: Bhopal, Price_Min_INR: 5500000, Price_Max_INR: 6200000, Size: 1300, Size_Unit: sq.ft, Floor: 2nd, Parking: 1 Covered, Possession: Ready to Move, Status: Sold, Tags: "", Client_Name: Sunita Rao, Broker: Rajesh Kumar, Final_Price_INR: 5900000, Commission_INR: 118000, Payment_Mode: Home loan, Payment_Status: Part paid, Amount_Received_INR: 4500000 }
+      - { Property_ID: PR-007, Created_At: "2026-07-01T10:00:00+05:30", Name: 2BHK Studio Apartment, Type: Residential, Config: 2 BHK, Area_Name: MP Nagar, City: Bhopal, Price_Min_INR: 3500000, Price_Max_INR: 4200000, Size: 890, Size_Unit: sq.ft, Floor: 7th, Parking: 1 Covered, Possession: Ready to Move, Status: Under Negotiation, Tags: "High Rise, Metro Nearby", Client_Name: Neha Gupta, Broker: Rajesh Kumar, Offered_Price_INR: 3600000, Expected_Price_INR: 4000000, Negotiation_Notes: "Wants the parking included; will decide after a second visit with family" }
       - { Property_ID: PR-008, Created_At: "2026-07-01T10:00:00+05:30", Name: Office Space 1000 sq.ft, Type: Commercial, Config: Office, Area_Name: Hoshangabad Road, City: Bhopal, Price_Min_INR: 5500000, Price_Max_INR: 6500000, Size: 1000, Size_Unit: sq.ft, Floor: 4th, Parking: 5 Open, Possession: Ready, Status: Available, Tags: "Corporate Zone, RERA Approved" }
       - { Property_ID: PR-009, Created_At: "2026-07-01T10:00:00+05:30", Name: Agricultural Land 2 Acre, Type: Plot, Config: Land, Area_Name: Ratibad, City: Bhopal, Price_Min_INR: 3000000, Price_Max_INR: 3800000, Size: 2, Size_Unit: acre, Floor: "", Parking: "", Possession: Ready, Status: Available, Tags: "Investment Zone, Highway Access" }
 
@@ -480,6 +490,17 @@ pages:
         search: [Name, Area_Name, Property_ID, Tags]
         filters: [Type, Area_Name, Config]
         actions: { header: [add_property], row: [edit_property, set_status] }
+        # Property details: the property, then the deal part that fits its status (`when:` — read by custom/PrTableBlock; the kernel
+        # drawer has no per-section condition). Client_Name reads as Buyer once booked or sold, Customer while negotiating (`as:`).
+        drawer:
+          title_column: Name
+          sections:
+            - { type: fields, title: Property, columns: [Type, Config, Area_Name, City, Price_Min_INR, Price_Max_INR, Size, Size_Unit, Floor, Parking, Possession, Tags, Property_ID] }
+            - { type: fields, title: Negotiation, when: "Status=Under Negotiation", as: { Client_Name: Customer }, columns: [Client_Name, Broker, Offered_Price_INR, Expected_Price_INR], hide_empty: false }
+            - { type: callout, title: Negotiation notes, when: "Status=Under Negotiation", column: Negotiation_Notes, tone: neutral }
+            - { type: fields, title: Booking, when: "Status=Booked", as: { Client_Name: Buyer }, columns: [Client_Name, Broker, Booking_Amount_INR, Commission_INR], hide_empty: false }
+            - { type: fields, title: Sale, when: "Status=Sold", as: { Client_Name: Buyer }, columns: [Client_Name, Final_Price_INR, Broker, Commission_INR], hide_empty: false }
+            - { type: fields, title: Payment, when: "Status=Sold", columns: [Payment_Mode, Payment_Status, Amount_Received_INR], hide_empty: false }
     modals:
       - { id: add_property, covers: [R12], kind: create, title: Add property, direct: insert, size: lg, submit: Add property, success: "Property added", context: { City: Bhopal, Status: Available, Size_Unit: sq.ft }, primary: true,
           # 8 fields — the R12 list (name, type, location, price range, BHK, area, tags; status starts Available). Floor, parking,
@@ -492,7 +513,20 @@ pages:
           fields: [ { key: Price_Min_INR, label: Price from (₹), type: number }, { key: Price_Max_INR, label: Price to (₹), type: number }, { key: Size, label: Area, type: number }, { key: Size_Unit, label: Unit, type: select, options: [sq.ft, sq.yd, acre] },
                     { key: Floor, label: Floor, type: text }, { key: Parking, label: Parking, type: text }, { key: Possession, label: Possession, type: text, placeholder: "Ready to Move / Dec 2026" }, { key: Tags, label: Tags, type: text } ] }
       - { id: set_status, kind: status, title: Change status, direct: patch, summary: [Name, Status], submit: Save,
-          fields: [ { key: Status, label: Status, type: select, options_status: true, required: true } ] }
+          # the deal details of the chosen status appear under it (show_when); the drawer shows them back
+          fields: [ { key: Status, label: Status, type: select, options_status: true, required: true },
+                    { key: Client_Name, label: Customer, type: text, show_when: "Status=Under Negotiation" },
+                    { key: Client_Name, label: Buyer, type: text, show_when: "Status in [Booked, Sold]", required_when: "Status in [Booked, Sold]" },
+                    { key: Broker, label: Broker, type: select, options_from: brokers.Name, show_when: "Status in [Under Negotiation, Booked, Sold]" },
+                    { key: Offered_Price_INR, label: Offered price (₹), type: number, show_when: "Status=Under Negotiation" },
+                    { key: Expected_Price_INR, label: Expected price (₹), type: number, show_when: "Status=Under Negotiation" },
+                    { key: Negotiation_Notes, label: Negotiation notes, type: textarea, rows: 2, show_when: "Status=Under Negotiation" },
+                    { key: Booking_Amount_INR, label: Booking amount (₹), type: number, show_when: "Status=Booked" },
+                    { key: Final_Price_INR, label: Final price (₹), type: number, show_when: "Status=Sold", required_when: "Status=Sold" },
+                    { key: Commission_INR, label: Commission (₹), type: number, show_when: "Status in [Booked, Sold]" },
+                    { key: Payment_Mode, label: Payment mode, type: select, options: [Home loan, Bank transfer, Cheque, UPI, Cash], show_when: "Status=Sold" },
+                    { key: Payment_Status, label: Payment status, type: select, options: [Pending, Part paid, Fully paid], show_when: "Status=Sold" },
+                    { key: Amount_Received_INR, label: Amount received (₹), type: number, show_when: "Status=Sold" } ] }
 
   - id: followups
     covers: [R9, R22, R8]

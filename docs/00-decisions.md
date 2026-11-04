@@ -85,7 +85,7 @@ Data: **PostgreSQL** (one database per client, single-tenant) · security: **§1
 | Site visits | Send confirmation to client | status: 0 fields · VISITS |
 | Inventory | Add property | create: 8 fields · direct |
 | Inventory | Edit property | edit: 8 fields · direct |
-| Inventory | Change status | status: 1 field · direct |
+| Inventory | Change status | status: 13 fields · direct |
 | Follow-ups | Reschedule nudge | edit: 1 field · direct |
 | Follow-ups | Stop follow-ups | status: 0 fields · direct |
 | Brokers | Add broker | create: 6 fields · direct |

@@ -1145,6 +1145,93 @@ export const PAGES = [
             "set_status"
           ]
         },
+        "drawer": {
+          "title_column": "Name",
+          "sections": [
+            {
+              "type": "fields",
+              "title": "Property",
+              "columns": [
+                "Type",
+                "Config",
+                "Area_Name",
+                "City",
+                "Price_Min_INR",
+                "Price_Max_INR",
+                "Size",
+                "Size_Unit",
+                "Floor",
+                "Parking",
+                "Possession",
+                "Tags",
+                "Property_ID"
+              ]
+            },
+            {
+              "type": "fields",
+              "title": "Negotiation",
+              "when": "Status=Under Negotiation",
+              "as": {
+                "Client_Name": "Customer"
+              },
+              "columns": [
+                "Client_Name",
+                "Broker",
+                "Offered_Price_INR",
+                "Expected_Price_INR"
+              ],
+              "hide_empty": false
+            },
+            {
+              "type": "callout",
+              "title": "Negotiation notes",
+              "when": "Status=Under Negotiation",
+              "column": "Negotiation_Notes",
+              "tone": "neutral"
+            },
+            {
+              "type": "fields",
+              "title": "Booking",
+              "when": "Status=Booked",
+              "as": {
+                "Client_Name": "Buyer"
+              },
+              "columns": [
+                "Client_Name",
+                "Broker",
+                "Booking_Amount_INR",
+                "Commission_INR"
+              ],
+              "hide_empty": false
+            },
+            {
+              "type": "fields",
+              "title": "Sale",
+              "when": "Status=Sold",
+              "as": {
+                "Client_Name": "Buyer"
+              },
+              "columns": [
+                "Client_Name",
+                "Final_Price_INR",
+                "Broker",
+                "Commission_INR"
+              ],
+              "hide_empty": false
+            },
+            {
+              "type": "fields",
+              "title": "Payment",
+              "when": "Status=Sold",
+              "columns": [
+                "Payment_Mode",
+                "Payment_Status",
+                "Amount_Received_INR"
+              ],
+              "hide_empty": false
+            }
+          ]
+        },
         "id": "inventory-table"
       }
     ],
@@ -1309,6 +1396,94 @@ export const PAGES = [
             "type": "select",
             "options_status": true,
             "required": true
+          },
+          {
+            "key": "Client_Name",
+            "label": "Customer",
+            "type": "text",
+            "show_when": "Status=Under Negotiation"
+          },
+          {
+            "key": "Client_Name",
+            "label": "Buyer",
+            "type": "text",
+            "show_when": "Status in [Booked, Sold]",
+            "required_when": "Status in [Booked, Sold]"
+          },
+          {
+            "key": "Broker",
+            "label": "Broker",
+            "type": "select",
+            "options_from": "brokers.Name",
+            "show_when": "Status in [Under Negotiation, Booked, Sold]"
+          },
+          {
+            "key": "Offered_Price_INR",
+            "label": "Offered price (₹)",
+            "type": "number",
+            "show_when": "Status=Under Negotiation"
+          },
+          {
+            "key": "Expected_Price_INR",
+            "label": "Expected price (₹)",
+            "type": "number",
+            "show_when": "Status=Under Negotiation"
+          },
+          {
+            "key": "Negotiation_Notes",
+            "label": "Negotiation notes",
+            "type": "textarea",
+            "rows": 2,
+            "show_when": "Status=Under Negotiation"
+          },
+          {
+            "key": "Booking_Amount_INR",
+            "label": "Booking amount (₹)",
+            "type": "number",
+            "show_when": "Status=Booked"
+          },
+          {
+            "key": "Final_Price_INR",
+            "label": "Final price (₹)",
+            "type": "number",
+            "show_when": "Status=Sold",
+            "required_when": "Status=Sold"
+          },
+          {
+            "key": "Commission_INR",
+            "label": "Commission (₹)",
+            "type": "number",
+            "show_when": "Status in [Booked, Sold]"
+          },
+          {
+            "key": "Payment_Mode",
+            "label": "Payment mode",
+            "type": "select",
+            "options": [
+              "Home loan",
+              "Bank transfer",
+              "Cheque",
+              "UPI",
+              "Cash"
+            ],
+            "show_when": "Status=Sold"
+          },
+          {
+            "key": "Payment_Status",
+            "label": "Payment status",
+            "type": "select",
+            "options": [
+              "Pending",
+              "Part paid",
+              "Fully paid"
+            ],
+            "show_when": "Status=Sold"
+          },
+          {
+            "key": "Amount_Received_INR",
+            "label": "Amount received (₹)",
+            "type": "number",
+            "show_when": "Status=Sold"
           }
         ]
       }

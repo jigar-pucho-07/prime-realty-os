@@ -130,6 +130,17 @@ CREATE TABLE IF NOT EXISTS "properties" (
   "possession" text,
   "status" text,
   "tags" text,
+  "client_name" text,
+  "broker" text,
+  "offered_price_inr" numeric,
+  "expected_price_inr" numeric,
+  "negotiation_notes" text,
+  "booking_amount_inr" numeric,
+  "final_price_inr" numeric,
+  "commission_inr" numeric,
+  "payment_mode" text,
+  "payment_status" text,
+  "amount_received_inr" numeric,
   _seq bigserial
 );
 CREATE INDEX IF NOT EXISTS "properties_status_idx" ON "properties" ("status");
@@ -349,6 +360,17 @@ ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "parking" text;
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "possession" text;
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "status" text;
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "tags" text;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "client_name" text;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "broker" text;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "offered_price_inr" numeric;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "expected_price_inr" numeric;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "negotiation_notes" text;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "booking_amount_inr" numeric;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "final_price_inr" numeric;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "commission_inr" numeric;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "payment_mode" text;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "payment_status" text;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "amount_received_inr" numeric;
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS _seq bigserial;
 DO $$ DECLARE r record; BEGIN
   FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND left(conname, 20) = 'properties_type_v49_' AND conname <> 'properties_type_v49_11d272e6' LOOP
@@ -385,6 +407,54 @@ DO $$ DECLARE r record; BEGIN
     EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'properties', r.conname); END LOOP;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND conname = 'properties_size_unit_v49_78a3e380') THEN
     ALTER TABLE "properties" ADD CONSTRAINT "properties_size_unit_v49_78a3e380" CHECK (("size_unit" IN ('sq.ft', 'sq.yd', 'acre') OR "size_unit" = '')) NOT VALID; END IF;
+END $$;
+DO $$ DECLARE r record; BEGIN
+  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND left(conname, 33) = 'properties_offered_price_inr_v49_' AND conname <> 'properties_offered_price_inr_v49_aee36552' LOOP
+    EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'properties', r.conname); END LOOP;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND conname = 'properties_offered_price_inr_v49_aee36552') THEN
+    ALTER TABLE "properties" ADD CONSTRAINT "properties_offered_price_inr_v49_aee36552" CHECK ("offered_price_inr" > 0) NOT VALID; END IF;
+END $$;
+DO $$ DECLARE r record; BEGIN
+  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND left(conname, 34) = 'properties_expected_price_inr_v49_' AND conname <> 'properties_expected_price_inr_v49_3616f57a' LOOP
+    EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'properties', r.conname); END LOOP;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND conname = 'properties_expected_price_inr_v49_3616f57a') THEN
+    ALTER TABLE "properties" ADD CONSTRAINT "properties_expected_price_inr_v49_3616f57a" CHECK ("expected_price_inr" > 0) NOT VALID; END IF;
+END $$;
+DO $$ DECLARE r record; BEGIN
+  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND left(conname, 34) = 'properties_booking_amount_inr_v49_' AND conname <> 'properties_booking_amount_inr_v49_78afd725' LOOP
+    EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'properties', r.conname); END LOOP;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND conname = 'properties_booking_amount_inr_v49_78afd725') THEN
+    ALTER TABLE "properties" ADD CONSTRAINT "properties_booking_amount_inr_v49_78afd725" CHECK ("booking_amount_inr" > 0) NOT VALID; END IF;
+END $$;
+DO $$ DECLARE r record; BEGIN
+  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND left(conname, 31) = 'properties_final_price_inr_v49_' AND conname <> 'properties_final_price_inr_v49_1df84a1a' LOOP
+    EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'properties', r.conname); END LOOP;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND conname = 'properties_final_price_inr_v49_1df84a1a') THEN
+    ALTER TABLE "properties" ADD CONSTRAINT "properties_final_price_inr_v49_1df84a1a" CHECK ("final_price_inr" > 0) NOT VALID; END IF;
+END $$;
+DO $$ DECLARE r record; BEGIN
+  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND left(conname, 30) = 'properties_commission_inr_v49_' AND conname <> 'properties_commission_inr_v49_bd34e34b' LOOP
+    EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'properties', r.conname); END LOOP;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND conname = 'properties_commission_inr_v49_bd34e34b') THEN
+    ALTER TABLE "properties" ADD CONSTRAINT "properties_commission_inr_v49_bd34e34b" CHECK ("commission_inr" > 0) NOT VALID; END IF;
+END $$;
+DO $$ DECLARE r record; BEGIN
+  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND left(conname, 28) = 'properties_payment_mode_v49_' AND conname <> 'properties_payment_mode_v49_f77729b1' LOOP
+    EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'properties', r.conname); END LOOP;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND conname = 'properties_payment_mode_v49_f77729b1') THEN
+    ALTER TABLE "properties" ADD CONSTRAINT "properties_payment_mode_v49_f77729b1" CHECK (("payment_mode" IN ('Home loan', 'Bank transfer', 'Cheque', 'UPI', 'Cash') OR "payment_mode" = '')) NOT VALID; END IF;
+END $$;
+DO $$ DECLARE r record; BEGIN
+  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND left(conname, 30) = 'properties_payment_status_v49_' AND conname <> 'properties_payment_status_v49_3547f8a1' LOOP
+    EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'properties', r.conname); END LOOP;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND conname = 'properties_payment_status_v49_3547f8a1') THEN
+    ALTER TABLE "properties" ADD CONSTRAINT "properties_payment_status_v49_3547f8a1" CHECK (("payment_status" IN ('Pending', 'Part paid', 'Fully paid') OR "payment_status" = '')) NOT VALID; END IF;
+END $$;
+DO $$ DECLARE r record; BEGIN
+  FOR r IN SELECT conname FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND left(conname, 35) = 'properties_amount_received_inr_v49_' AND conname <> 'properties_amount_received_inr_v49_81436087' LOOP
+    EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', 'properties', r.conname); END LOOP;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"properties"'::regclass AND conname = 'properties_amount_received_inr_v49_81436087') THEN
+    ALTER TABLE "properties" ADD CONSTRAINT "properties_amount_received_inr_v49_81436087" CHECK ("amount_received_inr" > 0) NOT VALID; END IF;
 END $$;
 ALTER TABLE "brokers" ADD COLUMN IF NOT EXISTS "name" text;
 ALTER TABLE "brokers" ADD COLUMN IF NOT EXISTS "phone" text;

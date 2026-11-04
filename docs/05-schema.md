@@ -49,6 +49,17 @@ id: Lead_ID (LD-…) · status: Stage ['New', 'Engaged', 'Visit Scheduled', 'Boo
 | Possession | text |
 | Status | text |
 | Tags | text |
+| Client_Name | text |
+| Broker | text |
+| Offered_Price_INR | numeric |
+| Expected_Price_INR | numeric |
+| Negotiation_Notes | text |
+| Booking_Amount_INR | numeric |
+| Final_Price_INR | numeric |
+| Commission_INR | numeric |
+| Payment_Mode | text |
+| Payment_Status | text |
+| Amount_Received_INR | numeric |
 
 id: Property_ID (PR-…) · status: Status ['Available', 'Under Negotiation', 'Booked', 'Sold']
 
